@@ -10,7 +10,7 @@ pygame.init()
 pygame.font.init()
 WIDTH, HEIGHT = 1280, 750
 WIN = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("PONG AI LEARNING SIMLUATION")
+pygame.display.set_caption("NEURAL NETWORK LEARNS TO PLAY PONG SIMULATION")
 WHITE = (255, 255, 255)
 RED = (255, 0, 0)
 YELLOW = (255, 255, 0)
