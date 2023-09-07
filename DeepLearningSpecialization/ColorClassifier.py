@@ -5,26 +5,18 @@ import numpy as np
 def main():
     colors = ['Blue', 'Brown', 'Green', 'Pink', 'Yellow', 'Orange', 'Purple', 'Red', 'Grey', "White", "Black"]
     # TRAIN NETWORK
-    layers_dims = [3, 2, 11]
+    layers_dims = [3, 10, 11]
     train_x, train_y = proccess_data()
-    nn = FeedForwardNeuralNetwork(train_x, train_y, layers_dims, 0.0075, 2500)
+    nn = FeedForwardNeuralNetwork(train_x, train_y, layers_dims, 0.075, 3000, multiclass_classification=True)
     nn.train()
     # SINGLE EXAMPLE PREDICTION
-    predict_inputs = [[255], [0], [0]]        # single example
+    predict_inputs = [[38], [5], [64]]        # R,G,B
     pred_i, predictions = nn.predict(predict_inputs, [])  # no ouptut labels provided for predicitng single value it is optional
     print("Inputs-[[R],[G],[B]]: " + str(predict_inputs))
     print("Prediction: " + str(colors[pred_i]))
     print("Pred-i: " + str(pred_i))
     print("Predications: " + str([predictions]))
-    # GRAPH COST BY ITERATIONS
-    """iters = []
-    for i in range(nn.num_iterations):
-        if i%100 == 0 or i % 100 == 0 or i == nn.num_iterations - 1:
-            iters.append(i)
-    plt.plot(iters, nn.costs, label = "Cost", color="red")
-    plt.xlim(0, nn.num_iterations) # og on both is (0, 900)
-    plt.ylim(0.40, 0.70)
-    plt.show()"""
+
 def proccess_data():
     file = open("datasets/colors.txt", "r")
     reds, blues, greens = [], [], []

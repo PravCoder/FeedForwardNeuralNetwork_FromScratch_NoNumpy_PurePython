@@ -202,6 +202,27 @@ class FeedForwardNN:
                 self.costs.append(self.cost)
 
 
+    def predict(self, X):
+        """
+        Predicts the output for input data X.
+
+        Args:
+        X (numpy.ndarray): Input data of shape (input_size, num_examples).
+
+        Returns:
+        predictions (numpy.ndarray): Model predictions of shape (output_size, num_examples).
+        """
+        # Ensure X has the correct shape
+        assert X.shape[0] == self.layers_dims[0], f"Input data must have shape ({self.layers_dims[0]}, num_examples)."
+
+        # Perform forward propagation to get predictions
+        self.train_X = X
+        self.feed_forward()
+        
+        # Return the predictions (A[L] for the last layer)
+        return self.AL
+
+
 if __name__ == "__main__":
     layers_dims = [1, 20, 7, 5, 1]  # num of neurons of each layer. input-layer-1, output-layer-1. hidden-layers-20-7-5. Layer-0 is input-layer. Layer-4 is output-layer
     # X.shape = (n[0], m). Num of rows is number of input-neurons. Num of cols is number of examples. 

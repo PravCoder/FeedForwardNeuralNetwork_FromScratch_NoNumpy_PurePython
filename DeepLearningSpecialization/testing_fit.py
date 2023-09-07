@@ -19,19 +19,29 @@ def proccess_data():
         train_x[0].append(input_val)
         train_y[0].append(func(input_val))
         x += 0.5
-    print(train_x)
+
+    # Convert train_x and train_y to NumPy arrays
+    train_x = np.array(train_x)
+    train_y = np.array(train_y)
+
+    # Normalize the data
+    mean = np.mean(train_x)
+    std = np.std(train_x)
+    train_x = (train_x - mean) / std
+
     return train_x, train_y
+
     
 
 def main():
-    layers_dims = [1,15,15,15,15,15,15,5,5,1]
+    layers_dims = [1,10,1]
     x, y = proccess_data()
     train_x = np.array(x)
     train_y = np.array(y)
     nn = FeedForwardNeuralNetwork(train_x, 
                                   train_y, 
                                   layers_dims, 
-                                  0.0075, 2500, 
+                                  0.075, 90000, 
                                   regression=True
                                 )
     # Run methods
