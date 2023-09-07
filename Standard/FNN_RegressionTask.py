@@ -32,7 +32,7 @@ def plot_fit(nn, train_x, train_y):
     #print(len(inputs) == len(labels))
     #print(len(inputs) == len(network_preedictions))
     plt.plot(inputs, labels, color="red")   # Sine curve
-    plt.plot(inputs, network_preedictions, color="blue")    # Netowrk fit
+    plt.plot(inputs, network_preedictions, color="blue")    # network fit
     plt.xlim(-0.1, 1.2)
     plt.ylim(-1.0, 1.0)
     plt.show()
