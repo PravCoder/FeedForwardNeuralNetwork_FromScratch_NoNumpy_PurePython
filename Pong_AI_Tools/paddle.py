@@ -46,7 +46,7 @@ class Paddle:
         # FNN.PY Network Classification
         inputs = [[bally], [paddley]]
         pred_i, predictions = self.neural_network.predict(inputs, [[0],[0]])
-        print("preds: " +str(predictions))
+        #print("preds: " +str(predictions))
         if pred_i == 1 and self.rect.y - self.vel > 0:
             self.rect.y -= self.vel
         if pred_i == 0 and self.rect.y + self.vel + self.rect.height < self.screen_height:
