@@ -2,6 +2,7 @@ import numpy as np      # ONLY USING NUMPY TO PRINT SHAPES OF PYTHON MATRICIES I
 import math as mth      # to perform mathmatical computations
 import matplotlib.pyplot as plt     # used to visualize the cost
 import copy     # used as 2nd check so that the data of a object is copied and not its reference
+import pygame
 
 class FeedForwardNeuralNetwork:
     def __init__(self, X, Y, dimensions, learning_rate=0.0075, num_iterations=3000, l2_regularization=False, binary_classification=False, multiclass_classification=False, regression=False, optimizer="gradient descent", learning_rate_decay=False, gradient_descent_variant="batch"):
@@ -683,6 +684,11 @@ class FeedForwardNeuralNetwork:
             algorithms.append("Learning Rate Decay")
         print("Algorithms: " + ", ".join(algorithms))
         print("-----------------------")
+
+
+    # VISUALIZATION
+    def create_pygame_window():
+        pass
         
  
     def train(self):

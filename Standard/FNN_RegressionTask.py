@@ -1,5 +1,6 @@
 from FNN import *
 import numpy as np
+import math
 
 # NOTE: The purpose of this file is for debugging the implementation. It runs the model on simple function
 # like y=0/5x. It also has a implementation of a linear regression model to also compare
@@ -7,15 +8,34 @@ import numpy as np
 
 
 def func(x):
-    return (0.5 * x)/100        # dividing by 100 to normalize data to avoid gradient explosion and nan cost
+    return math.sin(x)      # for different function
 def proccess_data():
     train_x = [[]]
     train_y = [[]]
     for x in range(0, 101):
         train_x[0].append(x/100)
         train_y[0].append(func(x))
-
     return train_x, train_y
+def plot_fit(nn, train_x, train_y): 
+    inputs = [] # stores each input to function in 1D-list
+    network_preedictions = []       # stores each prediction of network in 1D-list
+    labels = []     # stores each actual label of function in 1D-list
+    for e in range(len(train_x[0])):    # iterate through example indicies
+        cur_input = train_x[0][e]   # get current example input value
+        inputs.append(cur_input)        
+        labels.append(train_y[0][e])    # get current example label using example index
+        network_preedictions.append(nn.predict([[cur_input]], [], True)[0])     # add prediction of network to nerual network 
+    
+    #print("x: " + str(train_x))
+    #print("network-predictions: " + str(network_preedictions))
+    #print("labels: " + str(labels))
+    #print(len(inputs) == len(labels))
+    #print(len(inputs) == len(network_preedictions))
+    plt.plot(inputs, labels, color="red")   # Sine curve
+    plt.plot(inputs, network_preedictions, color="blue")    # Netowrk fit
+    plt.xlim(-0.1, 1.2)
+    plt.ylim(-1.0, 1.0)
+    plt.show()
 
 def main():
     layers_dims = [1,15,5,5,1]
@@ -23,7 +43,7 @@ def main():
     nn = FeedForwardNeuralNetwork(train_x, 
                                   train_y, 
                                   layers_dims, 
-                                  0.0075, 30, 
+                                  0.0075, 100, 
                                   l2_regularization=False,
                                   binary_classification=False,
                                   multiclass_classification=False,
@@ -35,10 +55,13 @@ def main():
     nn.train()
     preds = nn.predict([[1]], [], True)
     print(preds)
-#main()
+
+    plot_fit(nn, train_x, train_y)
+main()
 
 
 
+"""
 #-----------------------------------
 # LINEAR REGRESSION:
 # function y = 10x
@@ -88,7 +111,7 @@ trained_guess = forward(w, 40)
 
 # Run NN
 print("------------\n"+"NEURAL NETWORK MODEL:")
-main()
+main()"""
 
 
 
