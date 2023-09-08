@@ -23,12 +23,16 @@ class Ball:
 
     def check_paddles_collision(self, paddle1, paddle2, count):
         if paddle1.rect.colliderect(self.rect):
-            self.Yvel *= 1
+            random_y_change = random.uniform(-3, 3) # RANDOM
+            self.Yvel += random_y_change            # RANDOM
+            #self.Yvel *= 1                         # STATIC
             self.Xvel *= -1 
             paddle1.fitness_score += 1
             count += 1
         if paddle2.rect.colliderect(self.rect):
-            self.Yvel *= 1
+            random_y_change = random.uniform(-3, 3) # RANDOM
+            self.Yvel += random_y_change            # RANDOM
+            #self.Yvel *= 1                         # STATIC
             self.Xvel *= -1 
             paddle2.fitness_score += 1       
             count += 1
