@@ -62,7 +62,6 @@ def calculate_distance(ball, paddle):
     x2, y2 = ball.rect.x, ball.rect.y
     return math.sqrt(math.pow(x2-x1,2) + math.pow(y2-y1,2))
     
-# USE PONG 2 DATA
 def main():
     layers_dims = [2, 10, 2]
     paddle_nn = FeedForwardNeuralNetwork(np.array(train_x), np.array(train_y), layers_dims, 0.075, 9500, multiclass_classification=True)
@@ -70,7 +69,7 @@ def main():
 
     paddle1 = Paddle(10, 150, WIDTH, HEIGHT, "L", 5, BLACK, "neural_network")
     paddle2 = Paddle(10, 150, WIDTH, HEIGHT, "R", 5, WHITE, paddle_nn)
-    ball = Ball(30, 30, WIDTH, HEIGHT, GREEN)
+    ball = Ball(30, 30, WIDTH, HEIGHT, GREEN, is_random=True)
     collect_game_data = False    # TRUE to collect data
     game_inputs =  [[], []]
     game_outputs = [[], []]
@@ -140,4 +139,9 @@ WELL PERFORMING HYPERPARAMETERS TABLE:
 Artecture       Learing Rate        Iteartions      Dataset    Cost Status
 [2, 10, 2]      0.075               9500            7           ocilation
 [2, 10,5, 2]    0.1                 9500            7           ocilation
+
+
+
+Status: performing better than human and is able to keep up with hard coded paddle
+
 """

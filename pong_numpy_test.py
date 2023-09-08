@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from Pong_AI_Tools.paddle import Paddle
 from Pong_AI_Tools.ball import Ball
 from NumpyNetworks.FNN import FeedForwardNeuralNetwork
-from datasets.pong_data7 import train_x, train_y
+from datasets.pong_random import train_x, train_y
 import math
 
 pygame.init()
@@ -64,13 +64,13 @@ def calculate_distance(ball, paddle):
     
 
 def main():
-    layers_dims = [2, 10,5, 2]
-    paddle_nn = FeedForwardNeuralNetwork(np.array(train_x), np.array(train_y), layers_dims, 0., 9500, multiclass_classification=True)
+    layers_dims = [2, 10, 2]
+    paddle_nn = FeedForwardNeuralNetwork(np.array(train_x), np.array(train_y), layers_dims, 0.075, 9500, multiclass_classification=True)
     paddle_nn.train()  # dont train when collecting data
 
     paddle1 = Paddle(10, 150, WIDTH, HEIGHT, "L", 5, BLACK, "neural_network")
     paddle2 = Paddle(10, 150, WIDTH, HEIGHT, "R", 5, WHITE, paddle_nn)
-    ball = Ball(30, 30, WIDTH, HEIGHT, GREEN)
+    ball = Ball(30, 30, WIDTH, HEIGHT, GREEN, is_random=True)   # random ball collision
     collect_game_data = False    # TRUE to collect data
     game_inputs =  [[], []]
     game_outputs = [[], []]

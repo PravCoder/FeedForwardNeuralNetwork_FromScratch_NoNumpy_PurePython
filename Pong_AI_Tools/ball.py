@@ -4,13 +4,14 @@ import random
 
 class Ball:
 
-    def __init__(self, width, height, screen_width, screen_height, color):
+    def __init__(self, width, height, screen_width, screen_height, color, is_random=False):
         self.rect = pygame.Rect(screen_width/2, screen_height/2, width, height)
         self.color = color
         self.Xvel = 7
         self.Yvel = 5
         self.screen_width = screen_width
         self.screen_height = screen_height
+        self.is_random = is_random
 
 
     def update_position(self):
@@ -22,20 +23,33 @@ class Ball:
             self.Yvel *= -1  
 
     def check_paddles_collision(self, paddle1, paddle2, count):
-        if paddle1.rect.colliderect(self.rect):
-            random_y_change = random.uniform(-3, 3) # RANDOM
-            self.Yvel += random_y_change            # RANDOM
-            #self.Yvel *= 1                         # STATIC
-            self.Xvel *= -1 
-            paddle1.fitness_score += 1
-            count += 1
-        if paddle2.rect.colliderect(self.rect):
-            random_y_change = random.uniform(-3, 3) # RANDOM
-            self.Yvel += random_y_change            # RANDOM
-            #self.Yvel *= 1                         # STATIC
-            self.Xvel *= -1 
-            paddle2.fitness_score += 1       
-            count += 1
+        if self.is_random == True:
+            if paddle1.rect.colliderect(self.rect):
+                random_y_change = random.uniform(-3, 3) # RANDOM
+                self.Yvel += random_y_change            # RANDOM
+                #self.Yvel *= 1                         # STATIC
+                self.Xvel *= -1 
+                paddle1.fitness_score += 1
+                count += 1
+            if paddle2.rect.colliderect(self.rect):
+                random_y_change = random.uniform(-3, 3) # RANDOM
+                self.Yvel += random_y_change            # RANDOM
+                #self.Yvel *= 1                         # STATIC
+                self.Xvel *= -1 
+                paddle2.fitness_score += 1       
+                count += 1
+        else:
+            if paddle1.rect.colliderect(self.rect):
+                self.Yvel *= 1                         # STATIC
+                self.Xvel *= -1 
+                paddle1.fitness_score += 1
+                count += 1
+            if paddle2.rect.colliderect(self.rect):
+                self.Yvel *= 1                         # STATIC
+                self.Xvel *= -1 
+                paddle2.fitness_score += 1       
+                count += 1
+
         return count
 
     def draw(self, win):
