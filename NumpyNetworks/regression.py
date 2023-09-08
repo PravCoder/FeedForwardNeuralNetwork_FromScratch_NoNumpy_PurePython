@@ -1,7 +1,7 @@
-from FFN_Coursera2 import FeedForwardNeuralNetwork
 import numpy as np
 import math
 import matplotlib.pyplot as plt 
+from FNN import FeedForwardNeuralNetwork
 
 # NOTE: The purpose of this file is for debugging the implementation. It runs the model on simple function
 # like y=0/5x. It also has a implementation of a linear regression model to also compare
@@ -14,7 +14,7 @@ def proccess_data():
     train_x = [[]]
     train_y = [[]]
     x = 0
-    while x < 1000:
+    while x < 5000:
         input_val = x/100
         train_x[0].append(input_val)
         train_y[0].append(func(input_val))
@@ -34,19 +34,12 @@ def proccess_data():
     
 
 def main():
-    layers_dims = [1,10,1]
+    layers_dims = [1, 1]
     x, y = proccess_data()
     train_x = np.array(x)
     train_y = np.array(y)
-    nn = FeedForwardNeuralNetwork(train_x, 
-                                  train_y, 
-                                  layers_dims, 
-                                  0.075, 90000, 
-                                  regression=True
-                                )
-    # Run methods
+    nn = FeedForwardNeuralNetwork(train_x, train_y,   layers_dims, 0.0075, 119500, regression=True, multiclass_classification=False)
     nn.train()
-    nn.accuracy(train_x, train_y)
 
     inputs = [] # stores each input to function in 1D-list
     network_preedictions = []       # stores each prediction of network in 1D-list

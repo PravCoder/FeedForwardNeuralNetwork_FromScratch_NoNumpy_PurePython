@@ -28,7 +28,7 @@ if __name__ == "__main__":
 
     layers_dims = [30, 2, 4, 3, 1] 
     train_x, train_y = process_data()
-    nn = FeedForwardNeuralNetwork(train_x, train_y, layers_dims, 0.0075, 2500)
+    nn = FeedForwardNeuralNetwork(train_x, train_y, layers_dims, 0.0075, 2500, multiclass_classification=True)
     nn.train()
 
 

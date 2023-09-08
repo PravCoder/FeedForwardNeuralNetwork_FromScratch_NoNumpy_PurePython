@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 class FeedForwardNeuralNetwork:
-    def __init__(self, X, Y, dimensions, learning_rate=1.2, num_iterations=2500, multiclass_classification=False):
+    def __init__(self, X, Y, dimensions, learning_rate=1.2, num_iterations=2500, multiclass_classification=False, regression=False):
         self.X = X
         self.Y = Y
         self.dimensions = dimensions # each element is number of nodes in that layer. Length is total number of layers. 
@@ -14,6 +14,7 @@ class FeedForwardNeuralNetwork:
         self.cost = 0   
         self.costs = []
         self.multiclass_classification = multiclass_classification
+        self.regression = regression
 
     def initialize(self):
         np.random.seed(3)
@@ -53,7 +54,10 @@ class FeedForwardNeuralNetwork:
         l = len(self.dimensions)-1
         # Z[L] = W[L] * A[L-1] + b[L], L = index of last-output-layer
         self.cache["Z"+str(l)] = np.dot(self.params["W"+str(l)], self.cache["A"+str(l-1)]) + self.params["b"+str(l)]
-        self.cache["A"+str(l)] = self.sigmoid(self.cache["Z"+str(l)])    # A[L] = sigmoid(Z[L])
+        if self.multiclass_classification == True:
+            self.cache["A"+str(l)] = self.sigmoid(self.cache["Z"+str(l)])    # A[L] = sigmoid(Z[L])
+        if self.regression == True:     # linear activation for regression
+            self.cache["A"+str(l)] = self.cache["Z"+str(l)]
 
 
     def compute_cost(self):
@@ -66,6 +70,13 @@ class FeedForwardNeuralNetwork:
 
         # Squeeze to convert the cost to a scalar value
         self.cost = np.squeeze(self.cost)
+
+    def compute_cost_regression(self):
+        m = self.Y.shape[1] # number of examples is equal to the number of columns in train-examples-Y
+        L = len(self.dimensions) - 1
+        AL = self.cache["A" + str(L)]
+
+        self.cost = np.sum(np.power(AL - self.Y, 2)) / (2 * m)
         
     def backward_propagation(self, predict=False):
         AL = self.cache["A" + str(len(self.dimensions) - 1)] # get activation of last-layer
@@ -102,16 +113,18 @@ class FeedForwardNeuralNetwork:
         np.random.seed(1)
         self.initialize()
         for i in range(self.num_iterations):
-            #print(self.params)
             self.forward_propagation()
-            self.compute_cost()
+            if self.multiclass_classification == True:
+                self.compute_cost()
+            if self.regression == True:
+                self.compute_cost_regression()
             self.backward_propagation()
             self.update_parameters()
             if i % 100 == 0 or i == self.num_iterations - 1:
                 print('Cost after {} iterations is {}'.format(i, self.cost))
                 self.costs.append(self.cost)
 
-    def predict(self, X, outputs):
+    def predict(self, X, outputs=[]):
         self.cache["A0"] = X
         L = len(self.dimensions) - 1
         for l in range(1, L):
@@ -120,20 +133,26 @@ class FeedForwardNeuralNetwork:
 
         self.cache["Z"+str(L)] = np.dot(self.params["W"+str(L)], self.cache["A"+str(L-1)]) + self.params["b"+str(L)]
         self.cache["A"+str(L)] = self.sigmoid(self.cache["Z"+str(L)])
-        # Classify prediction for Multiclassclassification
-        #print(self.cache["A"+str(L)])
-        preds = []
-        for n in range(self.dimensions[-1]):
-            preds.append(self.cache["A"+str(L)][n][0])
-        #return np.round(self.cache["A"+str(L)]).astype(int)
-        return preds.index(max(preds)), preds
+
+        # MULTICLASS-CLASSIFICATION
+        if self.multiclass_classification == True:
+            preds = []
+            for n in range(self.dimensions[-1]):
+                preds.append(self.cache["A"+str(L)][n][0])
+            return preds.index(max(preds)), preds
+        # REGRESSION CLASSIFICATION
+        if self.regression == True:
+            preds = []
+            for n in range(self.dimensions[-1]):
+                preds.append(self.cache["A"+str(L)][n][0])
+            return preds
 
     def accuracy(self, X, Y):
         m = Y.shape[1]
         predictions = self.predict(X)
         correct_predictions = np.sum(predictions == Y)
         accuracy = correct_predictions / m
-        return accuracy
+        return accuracy, correct_predictions
 
 
 if __name__ == "__main__":
@@ -148,7 +167,7 @@ if __name__ == "__main__":
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1],
         [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0]
     ])
-    nn = FeedForwardNeuralNetwork(train_x, train_y, layers_dims, 0.0075, 2500)
+    nn = FeedForwardNeuralNetwork(train_x, train_y, layers_dims, 0.0075, 2500, multiclass_classification=True)
     nn.train()
     #predictions = nn.predict(train_x, [])
     #print("Predictions:", predictions)
