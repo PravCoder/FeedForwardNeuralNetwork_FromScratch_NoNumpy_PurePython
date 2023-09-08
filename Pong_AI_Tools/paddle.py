@@ -62,24 +62,15 @@ class Paddle:
             self.rect.y -= self.vel
         if pred_i == 0 and self.rect.y + self.vel + self.rect.height < self.screen_height:
             self.rect.y += self.vel
+
+    def predict_movement_7(self, ballY, selfPaddleY):
+        inputs = [[ballY], [selfPaddleY]]
+        pred_i, predictions = self.neural_network.predict(inputs, [[0],[0]])
+        if pred_i == 1 and self.rect.y - self.vel > 0:
+            self.rect.y -= self.vel
+        if pred_i == 0 and self.rect.y + self.vel + self.rect.height < self.screen_height:
+            self.rect.y += self.vel
         
-        
-
-    def predict_movement_regression(self, bally, paddley, ball):
-        # FNN.py Network Regression:
-        inputs = [[bally, paddley]]
-        preds = self.neural_network.predict(inputs, [], True)
-        pred_y = preds[0]*100
-
-        if pred_y < bally:
-            while self.rect.y < ball.rect.y:
-                self.rect.y += self.vel
-                self.status = "up"
-        if pred_y > bally:
-            while self.rect.y > ball.rect.y:
-                self.rect.y -= self.vel
-                self.status = "down"
-
 
     def draw(self, win):
         pygame.draw.rect(win, self.color, self.rect)

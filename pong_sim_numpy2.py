@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from Pong_AI_Tools.paddle import Paddle
 from Pong_AI_Tools.ball import Ball
 from NumpyNetworks.FNN import FeedForwardNeuralNetwork
-from datasets.pong_data5 import train_x, train_y
+from datasets.pong_data7 import train_x, train_y
 import math
 
 pygame.init()
@@ -62,10 +62,10 @@ def calculate_distance(ball, paddle):
     x2, y2 = ball.rect.x, ball.rect.y
     return math.sqrt(math.pow(x2-x1,2) + math.pow(y2-y1,2))
     
-# USE PONG 2 DATA
+
 def main():
-    layers_dims = [2, 3, 2]
-    paddle_nn = FeedForwardNeuralNetwork(np.array(train_x), np.array(train_y), layers_dims, 0.01, 9500, multiclass_classification=True)
+    layers_dims = [2, 10,5, 2]
+    paddle_nn = FeedForwardNeuralNetwork(np.array(train_x), np.array(train_y), layers_dims, 0., 9500, multiclass_classification=True)
     paddle_nn.train()  # dont train when collecting data
 
     paddle1 = Paddle(10, 150, WIDTH, HEIGHT, "L", 5, BLACK, "neural_network")
@@ -98,7 +98,7 @@ def main():
         if collect_game_data == True:
             paddle2.automate_movement(ball)
         if collect_game_data == False:
-            paddle2.predict_movement( ball.rect.y/100, paddle1.rect.y/100 )
+            paddle2.predict_movement_7( ball.rect.y/100, paddle2.rect.y/100 ) # passing correct inputs into network
 
         # WIN CONDITION
         current_streak, longest_streak = check_win(ball, current_streak, longest_streak)
@@ -107,7 +107,7 @@ def main():
 
         if collect_game_data == True:
             game_inputs[0].append(ball.rect.y/100)
-            game_inputs[1].append(paddle1.rect.y/100)
+            game_inputs[1].append(paddle2.rect.y/100)
         if collect_game_data == True:
             if paddle2.status == "up":
                 game_outputs[0].append(1)

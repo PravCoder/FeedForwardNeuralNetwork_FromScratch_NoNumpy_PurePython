@@ -1,9 +1,10 @@
 import pygame
+import numpy as np
 import matplotlib.pyplot as plt   
 from Pong_AI_Tools.paddle import Paddle
 from Pong_AI_Tools.ball import Ball
-from NoNumpyNetworks.FNN import FeedForwardNeuralNetwork
-from datasets.pong_data3 import train_x, train_y
+from NumpyNetworks.FNN import FeedForwardNeuralNetwork
+from datasets.pong_data7 import train_x, train_y
 import math
 
 pygame.init()
@@ -61,10 +62,10 @@ def calculate_distance(ball, paddle):
     x2, y2 = ball.rect.x, ball.rect.y
     return math.sqrt(math.pow(x2-x1,2) + math.pow(y2-y1,2))
     
-
+# USE PONG 2 DATA
 def main():
-    layers_dims = [2, 2]
-    paddle_nn = FeedForwardNeuralNetwork(train_x, train_y, layers_dims, 0.080, 200, l2_regularization=False, binary_classification=False, multiclass_classification=True, regression=False, optimizer="gradient descent", learning_rate_decay=False, gradient_descent_variant="batch")
+    layers_dims = [2, 10, 2]
+    paddle_nn = FeedForwardNeuralNetwork(np.array(train_x), np.array(train_y), layers_dims, 0.075, 9500, multiclass_classification=True)
     paddle_nn.train()  # dont train when collecting data
 
     paddle1 = Paddle(10, 150, WIDTH, HEIGHT, "L", 5, BLACK, "neural_network")
@@ -97,7 +98,7 @@ def main():
         if collect_game_data == True:
             paddle2.automate_movement(ball)
         if collect_game_data == False:
-            paddle2.predict_movement( ball.rect.y/100, paddle1.rect.y/100 )
+            paddle2.predict_movement_7( ball.rect.y/100, paddle2.rect.y/100 ) # passing correct inputs into network
 
         # WIN CONDITION
         current_streak, longest_streak = check_win(ball, current_streak, longest_streak)
@@ -106,7 +107,7 @@ def main():
 
         if collect_game_data == True:
             game_inputs[0].append(ball.rect.y/100)
-            game_inputs[1].append(paddle1.rect.y/100)
+            game_inputs[1].append(paddle2.rect.y/100)
         if collect_game_data == True:
             if paddle2.status == "up":
                 game_outputs[0].append(1)
@@ -133,13 +134,10 @@ if __name__ == "__main__":
     main()
 
 
-# INPUTS: ballX, ballY, distance
-# OUTPUTS: up, down
-
-# Function Complexity: For some tasks, especially simpler tasks or tasks with a linear relationship between inputs and outputs, a linear model (no hidden layers) might be sufficient to capture the underlying patterns in the data. Introducing a hidden layer can introduce unnecessary complexity, leading to overfitting or slower convergence.
-
-# DEBUG STRATEGIES:
-# ()- Collect more data for 2 inputs and train with same arcitecture and hyperparameters. 
-# ()- More iterations.
-# ()- Deeper network architecture
-# ()- Failing to move down so randmoize the y-direction of ball at start
+""""
+WELL PERFORMING HYPERPARAMETERS TABLE:
+------------------------------------------------------------------
+Artecture       Learing Rate        Iteartions      Dataset    Cost Status
+[2, 10, 2]      0.075               9500            7           ocilation
+[2, 10,5, 2]    0.1                 9500            7           ocilation
+"""
