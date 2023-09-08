@@ -1,120 +1,56 @@
-import numpy as np 
-import matplotlib.pyplot as plt 
+import pygame
+import sys
 
-"""
-- [x] generate data 
-- [ ] neural network
-    - [x] init
-    - [ ] forward
-    - [ ] backpropagate
-    - [x] activation
-    - [ ] train
-"""
+# Initialize Pygame
+pygame.init()
 
-def generate_data(n: int) -> np.ndarray: 
-    x = np.linspace(0, 1, n) 
-    x = x.reshape(len(x), 1)
-    y = np.sin(2 * np.pi * x)
-    return x, y
+# Define colors
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
 
-class NN:
-    def __init__(self, n_input: int, n_hidden: int, n_output: int, num_layers: int) -> None:
-        """
-        n_input: dimensionality of the input 
-        n_hidden: number of neurons in the hidden layers 
-        n_output: dimensionality of the output
-        num_layers: the number of hidden layers
-        """
-        self.n_input = n_input 
-        self.n_hidden = n_hidden 
-        self.n_output = n_output 
-        self.num_layers = num_layers 
-        self.w = []
-        self.b = []
-        self.gradw = []
-        self.gradb = []
-        self.deltas = []
-        #initializing the weights
-        self.w.append(np.random.randn(n_input, n_hidden))
-        for i in range(num_layers - 1):
-            self.w.append(np.random.randn(n_hidden, n_hidden))
-        self.w.append(np.random.randn(n_hidden, n_output))
-        #initializing the biases
-        self.b.append(np.zeros((1, n_hidden)))
-        for i in range(num_layers - 1):
-            self.b.append(np.zeros((1, n_hidden)))
-        self.b.append(np.zeros((1, n_output)))
+# Define screen dimensions
+SCREEN_WIDTH, SCREEN_HEIGHT = 800, 600
+screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+pygame.display.set_caption("Neural Network Visualization")
 
-    def activation(self, x: np.ndarray) -> np.ndarray:
-        # x = [-1*num for num in x]
-        # return (1)/(1 + np.exp(x))
-        return np.tanh(x)
+# Sample architecture (number of neurons in each layer)
+architecture = [2, 3,10,10,10,10, 8, 3]
 
-    def activation_deriv(self, x: np.ndarray) -> np.ndarray:
-        # return self.activation(x)*(1 - self.activation(x))
-        return 1 - np.power(self.activation(x), 2)
+# Define node radius and gap between layers
+NODE_RADIUS = 20
+LAYER_GAP = SCREEN_WIDTH // (len(architecture) + 1)
 
-    def forward(self, x: np.ndarray) -> np.ndarray:
-        self.z = []
-        self.a = []
-        self.z.append(x)
-        self.a.append(x)
-
-        for i in range(self.num_layers):
-            self.z.append(np.dot(self.a[i], self.w[i]) + self.b[i])
-            self.a.append(self.activation(self.z[i + 1]))
-        return self.a[-1]
-    
-    def mse(self, x: np.ndarray, y: np.ndarray) -> float:
-        return np.mean(np.power(self.predict(x) - y, 2))
-
-
-    def backward(self, x: np.ndarray, y: np.ndarray) -> None:
-        self.gradw = []
-        self.gradb = []
-        self.deltas = []
+def draw_neural_network(architecture):
+    for i, layer_size in enumerate(architecture):
+        x = (i + 1) * LAYER_GAP
+        y_step = SCREEN_HEIGHT / (layer_size + 1)
         
-        self.deltas.append(self.a[-1] - y)
+        for j in range(layer_size):
+            y = (j + 1) * y_step
+            pygame.draw.circle(screen, BLACK, (x, int(y)), NODE_RADIUS)
+            
+            # Connect to the next layer
+            if i < len(architecture) - 1:
+                next_layer_size = architecture[i + 1]
+                for k in range(next_layer_size):
+                    next_x = (i + 2) * LAYER_GAP
+                    next_y_step = SCREEN_HEIGHT / (next_layer_size + 1)
+                    next_y = (k + 1) * next_y_step
+                    pygame.draw.line(screen, BLACK, (x + NODE_RADIUS, int(y)), (next_x - NODE_RADIUS, int(next_y)), 2)
 
-        self.gradw.append(np.dot(self.a[-2].T, self.deltas[-1]))
-        self.gradb.append(np.sum(self.deltas[-1], axis=0, keepdims=True))
-
-        for i in range(self.num_layers - 1, 0, -1):
-            self.deltas.append(np.dot(self.deltas[-1], self.w[i].T) * self.activation_deriv(self.z[i]))
-            self.gradw.append(np.dot(self.a[i - 1].T, self.deltas[-1]))
-            self.gradb.append(np.sum(self.deltas[-1], axis=0, keepdims=True))
+def main():
+    running = True
+    while running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
         
-        self.gradw.reverse()
-        self.gradb.reverse()
-        self.deltas.reverse()
-
-    def update(self, lr: float) -> None:
-        for i in range(self.num_layers):
-            self.w[i] -= lr*self.gradw[i]
-            self.b[i] -= lr*self.gradb[i]
-
-    def train(self, x: np.ndarray, y: np.ndarray, lr: float, epochs: int) -> None:
-        for i in range(epochs):
-            self.forward(x)
-            self.backward(x, y)
-            self.update(lr)
-            # if (self.mse(x, y) < 0.1):
-                # break
-            if i % 100 == 0:
-                print(f'Epoch {i}: {self.mse(x, y)}')
+        screen.fill(WHITE)
+        draw_neural_network(architecture)
+        pygame.display.flip()
     
-    def predict(self, x: np.ndarray) -> np.ndarray:
-        print(self.forward(x))
-        return self.forward(x)
-    
-#make an NN 
-x, y = generate_data(100)
-nn = NN(1, 3, 1, 3)
+    pygame.quit()
+    sys.exit()
 
-nn.train(x, y, 0.01, 10000)
-
-
-y_pred = [np.mean(a) for a in nn.predict(x)]
-plt.scatter(x, y)
-plt.plot(x, y_pred)
-plt.show()
+if __name__ == "__main__":
+    main()

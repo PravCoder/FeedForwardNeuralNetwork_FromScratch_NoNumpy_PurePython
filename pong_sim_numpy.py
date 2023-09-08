@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt   
 from Pong_AI_Tools.paddle import Paddle
 from Pong_AI_Tools.ball import Ball
-from DeepLearningSpecialization.FNN import FeedForwardNeuralNetwork
+from NumpyNetworks.FNN import FeedForwardNeuralNetwork
 from datasets.pong_data5 import train_x, train_y
 import math
 
