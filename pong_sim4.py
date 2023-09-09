@@ -2,7 +2,7 @@ import pygame
 import matplotlib.pyplot as plt   
 from Pong_AI_Tools.paddle import Paddle
 from Pong_AI_Tools.ball import Ball
-from NoNumpyNetworks.FNN import FeedForwardNeuralNetwork
+from ScratchNetworks.FNN import FeedForwardNeuralNetwork
 from datasets.pong_data4 import train_x, train_y
 import math
 

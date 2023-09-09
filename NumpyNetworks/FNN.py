@@ -169,11 +169,7 @@ if __name__ == "__main__":
     ])
     nn = FeedForwardNeuralNetwork(train_x, train_y, layers_dims, 0.0075, 2500, multiclass_classification=True)
     nn.train()
-    #predictions = nn.predict(train_x, [])
-    #print("Predictions:", predictions)
 
-    #accuracy = nn.accuracy(train_x, train_y)
-    #print("Accuracy:", accuracy)
 
 """    iters = []
     for i in range(nn.num_iterations):
@@ -185,4 +181,6 @@ if __name__ == "__main__":
     plt.ylim(0.68, 0.70)
     plt.show()"""
 
-    # Note: a group of relevant matricies would be W1,b1,Z1,A0
+
+# TODO:
+# - Binary 

@@ -12,7 +12,7 @@ def main():
     nn = FeedForwardNeuralNetwork(train_x, train_y, layers_dims, 0.075, 3000, multiclass_classification=True)
     nn.train()
     # SINGLE EXAMPLE PREDICTION
-    predict_inputs = [[165], [140], [146]]        # R,G,B
+    predict_inputs = [[255], [0], [0]]        # R,G,B
     pred_i, predictions = nn.predict(predict_inputs, [])  # no ouptut labels provided for predicitng single value it is optional
     print("Inputs: [[R],[G],[B]]: " + str(predict_inputs))
     print("Prediction: " + str(colors[pred_i]))
