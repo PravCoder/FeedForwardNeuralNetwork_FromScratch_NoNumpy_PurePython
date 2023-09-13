@@ -21,6 +21,7 @@ BROWN = (244,164,96)
 GREEN = (50,205,50)
 STREAK_FONT = pygame.font.SysFont("comicsans", 40)
 LOST_FONT = pygame.font.SysFont("comicsans", 100)
+BLUE = (30,144,255)
 
 
 def draw_window(ball, paddle1, paddle2, current_streak, longest_streak):
@@ -35,6 +36,7 @@ def draw_window(ball, paddle1, paddle2, current_streak, longest_streak):
     WIN.blit(STREAK_SURFACE, (300,0))
     WIN.blit(LONGEST_SURFACE, (800,0))
     draw_line()
+    draw_radar(ball, paddle2, paddle1)
     pygame.display.update()
 
 def check_win(ball, current_streak, longest_streak):
@@ -56,11 +58,20 @@ def check_win(ball, current_streak, longest_streak):
 def draw_line():
     pygame.draw.line(WIN, BLACK, (WIDTH/2, 0), (WIDTH/2, HEIGHT))
 
+def draw_radar(ball, paddle2, paddle1):
+    pygame.draw.line(WIN, BLUE, (ball.rect.x, ball.rect.y), (paddle2.rect.x, paddle2.rect.y))
+    pygame.draw.line(WIN, BLUE, (paddle1.rect.x, paddle1.rect.y+100), (paddle2.rect.x, paddle2.rect.y))
+    pygame.draw.line(WIN, BLUE, (ball.rect.x, ball.rect.y), (paddle2.rect.x, paddle2.rect.y))
+    pygame.draw.line(WIN, BLUE, (paddle1.rect.x, paddle1.rect.y+100), (paddle2.rect.x, paddle2.rect.y))
+    pygame.draw.line(WIN, BLUE, (ball.rect.x, ball.rect.y), (paddle2.rect.x, paddle2.rect.y))
+    pygame.draw.line(WIN, BLUE, (paddle1.rect.x, paddle1.rect.y+100), (paddle2.rect.x, paddle2.rect.y))
 
 def calculate_distance(ball, paddle):
     x1, y1 = paddle.rect.x, paddle.rect.y
     x2, y2 = ball.rect.x, ball.rect.y
     return math.sqrt(math.pow(x2-x1,2) + math.pow(y2-y1,2))
+
+
     
 def main():
     layers_dims = [2, 10, 2]
@@ -121,10 +132,10 @@ def main():
 
         draw_window(ball, paddle1, paddle2, current_streak, longest_streak)
         
-        #paddle1.move(keys_pressed)     # to move paddle 1 with human
+        #paddle1.move(keys_pressed)    # HUMAN
         #paddle2.move(keys_pressed) 
         #paddle2.predict_movement(ball, paddle1)
-        paddle1.automate_movement(ball)
+        paddle1.automate_movement(ball) # ROBOT
 
 
     main()

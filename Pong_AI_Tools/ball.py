@@ -25,14 +25,14 @@ class Ball:
     def check_paddles_collision(self, paddle1, paddle2, count):
         if self.is_random == True:
             if paddle1.rect.colliderect(self.rect):
-                random_y_change = random.uniform(-3, 3) # RANDOM
+                random_y_change = random.uniform(-0.01, 0.01) # RANDOM, decrease interval to decrease difficulty.
                 self.Yvel += random_y_change            # RANDOM
                 #self.Yvel *= 1                         # STATIC
                 self.Xvel *= -1 
                 paddle1.fitness_score += 1
                 count += 1
             if paddle2.rect.colliderect(self.rect):
-                random_y_change = random.uniform(-3, 3) # RANDOM
+                random_y_change = random.uniform(-0.01, 0.01) # RANDOM
                 self.Yvel += random_y_change            # RANDOM
                 #self.Yvel *= 1                         # STATIC
                 self.Xvel *= -1 
