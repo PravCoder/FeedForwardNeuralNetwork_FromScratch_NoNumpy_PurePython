@@ -60,11 +60,11 @@ def draw_line():
 
 def draw_radar(ball, paddle2, paddle1):
     pygame.draw.line(WIN, BLUE, (ball.rect.x, ball.rect.y), (paddle2.rect.x, paddle2.rect.y))
-    pygame.draw.line(WIN, BLUE, (paddle1.rect.x, paddle1.rect.y+100), (paddle2.rect.x, paddle2.rect.y))
+    pygame.draw.line(WIN, BLUE, (paddle1.rect.x, paddle1.rect.y+150), (paddle2.rect.x, paddle2.rect.y))
     pygame.draw.line(WIN, BLUE, (ball.rect.x, ball.rect.y), (paddle2.rect.x, paddle2.rect.y))
-    pygame.draw.line(WIN, BLUE, (paddle1.rect.x, paddle1.rect.y+100), (paddle2.rect.x, paddle2.rect.y))
+    pygame.draw.line(WIN, BLUE, (paddle1.rect.x, paddle1.rect.y+150), (paddle2.rect.x, paddle2.rect.y))
     pygame.draw.line(WIN, BLUE, (ball.rect.x, ball.rect.y), (paddle2.rect.x, paddle2.rect.y))
-    pygame.draw.line(WIN, BLUE, (paddle1.rect.x, paddle1.rect.y+100), (paddle2.rect.x, paddle2.rect.y))
+    pygame.draw.line(WIN, BLUE, (paddle1.rect.x, paddle1.rect.y+150), (paddle2.rect.x, paddle2.rect.y))
 
 def calculate_distance(ball, paddle):
     x1, y1 = paddle.rect.x, paddle.rect.y
@@ -78,7 +78,7 @@ def main():
     paddle_nn = FeedForwardNeuralNetwork(np.array(train_x), np.array(train_y), layers_dims, 0.075, 9500, multiclass_classification=True)
     paddle_nn.train()  # dont train when collecting data
 
-    paddle1 = Paddle(10, 150, WIDTH, HEIGHT, "L", 5, BLACK, "neural_network")
+    paddle1 = Paddle(10, 150, WIDTH, HEIGHT, "L", 5, BLACK, "neural_network") # orignal length 150
     paddle2 = Paddle(10, 150, WIDTH, HEIGHT, "R", 5, WHITE, paddle_nn)
     ball = Ball(30, 30, WIDTH, HEIGHT, GREEN, is_random=True)
     collect_game_data = False    # TRUE to collect data
@@ -132,10 +132,11 @@ def main():
 
         draw_window(ball, paddle1, paddle2, current_streak, longest_streak)
         
-        #paddle1.move(keys_pressed)    # HUMAN
+        paddle1.move(keys_pressed)    # HUMAN
         #paddle2.move(keys_pressed) 
-        #paddle2.predict_movement(ball, paddle1)
-        paddle1.automate_movement(ball) # ROBOT
+        paddle2.predict_movement(ball.rect.y, paddle1.rect.y) # NETWORK
+        #paddle1.automate_movement(ball) # ROBOT
+        #paddle2.automate_movement(ball)  # ROBOT
 
 
     main()

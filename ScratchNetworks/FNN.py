@@ -413,6 +413,7 @@ class FeedForwardNeuralNetwork:
                 for m in range(self.mini_batch_size):
                     y = y_mini[n][m]
                     al = AL[m][n]
+                    
                     example_cost += y * mth.log(al) + (1 - y) * mth.log(1 - al)
             mini_batch_cost = example_cost / self.mini_batch_size
         self.cost = -mini_batch_cost / self.num_mini_batches
