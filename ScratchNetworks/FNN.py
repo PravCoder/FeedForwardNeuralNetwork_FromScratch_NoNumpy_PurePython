@@ -439,6 +439,8 @@ class FeedForwardNeuralNetwork:
         for i, val in enumerate(z):
             z[i] = self.sigmoid_single(val) * (1-self.sigmoid_single(val))
         return z
+    
+
     def relu_single(self, x):
         if x > 0:
             return 1
@@ -467,7 +469,8 @@ class FeedForwardNeuralNetwork:
                     self.dW[l][prev].append(float(np.random.randn() *0.01))
             for next in range(self.dimensions[l]):
                 self.db[l].append(0)
-        
+
+        # TODO: iterate all output-nodes, onyl doing 1 output-node
         for m in range(self.m):     # iterate each example index
             y = self.Y[0][m]        # get actual label of current example of 0th output-node
             al_arr = self.A[L][m]       # get activations of last-layer of current layer in list

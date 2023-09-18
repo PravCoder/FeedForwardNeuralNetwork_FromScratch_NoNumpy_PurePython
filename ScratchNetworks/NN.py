@@ -188,14 +188,16 @@ class FeedForwardNeuralNetwork:
                     #self.W[l][prev].append(0)  # zero weight initlization COMMENT THIS!
             for _ in range(self.dimensions[l]):      # iterate each node index in current layer and add 0 for bias for current layer, there is a seperate bias for each node in each layer
                 self.db[l].append(0)
-        # creates initial representation of the gradient of cost function with respect to activations and weighted sum as same as activations and weighted same
-        for _ in range(0, len(self.dimensions)):
+        for _ in range(0, len(self.dimensions)):        # iterate through each layer index and add empty list to Z/A
             self.dZ.append([])
             self.dA.append([])
-        for l in range(0, len(self.dimensions)):
-            temp = [0 for _ in range(self.dimensions[l])]
-            self.dZ[l] = [temp for _ in range(self.m)]
-            self.dA[l] = [temp for _ in range(self.m)]
+        for l in range(0, len(self.dimensions)):        # iterate through each layer index again but index of current layer is needed
+           for c in range(self.dimensions[l]):
+               self.dZ[l].append([])
+               self.dA[l].append([])
+               for _ in range(self.m):
+                   self.dZ[l][c].append(0)
+                   self.dA[l][c].append(0)
         #self.show_shapes(self.dW, "dW")
         #self.show_shapes(self.db, "db")
         #self.show_shapes(self.dZ, "dZ")
@@ -364,13 +366,9 @@ class FeedForwardNeuralNetwork:
             example_cost = 0
             for m in range(self.m):     # iterate throughe each example index
                 y = self.Y[n][m]        # get the actual label of current ouput-node and current example
-                al = AL[m][n]           # get the activation of current example and current output-node of last-layer
-                if self.l2_regularization == True:
-                    reg_term = self.lambd/2 * self.square_sum(self.W[L], L)
-                    example_cost += y * mth.log(al) + (1 - y) * mth.log(1 - al) +reg_term
-                else:       # use activation of last-layer and actual label to compute the cost of current example
-                    print(al)
-                    example_cost += y * mth.log(al) + (1 - y) * mth.log(1 - al)
+                al = AL[n][m]           # get the activation of current example and current output-node of last-layer
+                print("al: " + str(al))
+                example_cost += y * mth.log(al) + (1 - y) * mth.log(1 - al)
             total_cost += example_cost / self.m     # average the example cost and add it to total-cost
         self.cost = -total_cost / (self.dimensions[L])
 
@@ -442,6 +440,8 @@ class FeedForwardNeuralNetwork:
         for i, val in enumerate(z):
             z[i] = self.sigmoid_single(val) * (1-self.sigmoid_single(val))
         return z
+    def sigmoid_backward_single(self, z):
+        return self.sigmoid_single(z) * (1-self.sigmoid_single(z))
     def relu_single(self, x):
         if x > 0:
             return 1
@@ -470,44 +470,36 @@ class FeedForwardNeuralNetwork:
                     self.dW[l][prev].append(float(np.random.randn() *0.01))
             for next in range(self.dimensions[l]):
                 self.db[l].append(0)
-        
-        for m in range(self.m):     # iterate each example index
-            y = self.Y[0][m]        # get actual label of current example of 0th output-node
-            al_arr = self.A[L][m]       # get activations of last-layer of current layer in list
-            self.dA[L][m] = []      # init derivative of activations of last-layer of current example to empty list
-            for i, val in enumerate(al_arr):        # iterate each activation value in last-layer of current example
-                al = val
-                self.dA[L][m].append(-((y / al) - ((1 - y) / (1 - al))))        # compute dA of last-layer of current example using acutal label of current example and activation of last-layer
-                
-        # LAST LAYER:
-        for m in range(self.m):     # iterate each example index
-            for n in range(self.dimensions[L]):     # iterate node index of last-layer
-                self.dZ[L][m][n] = self.dA[L][m][n] * self.sigmoid_backward(self.Z[L][m])[n]        # compute dZ-last-layer-current-example-node = dA-last-layer-current-example-node * sigmoid_derivative(Z-last-layer-current-example)-node
-                for prev_node in range(self.dimensions[L - 1]):     # iterate each index of nodes in previous-layer
-                    if self.l2_regularization == True:      # adding regularization term for l2-reg gradietn computation   
-                        self.dW[L][prev_node][n] += self.dZ[L][m][n] * self.A[L - 1][m][prev_node] + self.reg_term(self.W[L], self.lambd/self.m, L)[prev_node][n]
-                    else:       # normal no l2-reg
-                        self.dW[L][prev_node][n] += self.dZ[L][m][n] * self.A[L - 1][m][prev_node]
-                self.db[L][n] += self.dZ[L][m][n]
 
+        for cur in range(self.dimensions[L]):
+            for m in range(self.m):
+                y = self.Y[cur][m]
+                al = self.A[L][cur][m]
+                self.dA[L][cur][m] = -((y / al) - ((1 - y) / (1 - al)))
+        
+        
+        # LAST LAYER:
+        for cur in range(self.dimensions[L]):
+            for m in range(self.m):
+                self.dZ[L][cur][m] = self.dA[L][cur][m] * self.sigmoid_backward_single(self.Z[L][cur][m])
+        for m in range(self.m):
             for prev in range(self.dimensions[L-1]):
-                for cur in range(self.dimensions[l]):
-                    self.dA[L-1][m][prev] += self.W[L][prev][cur] * self.dZ[L][cur][m]
+                for cur in range(self.dimensions[L]):
+                    self.dW[L][prev][cur] += self.dZ[L][cur][m] * self.A[L-1][cur][m]
+                    self.db[L][cur] += self.dZ[L][cur][m]
+                self.dA[L-1][cur][m] += self.W[L][prev][cur] * self.dZ[L][cur][m]
 
         # REST OF THE LAYERS:
-        for l in range(len(self.dimensions) - 2, 0, -1):
+        for l in range(len(self.dimensions)-2, 0, -1):
+            for cur in range(self.dimensions[l]):
+                for m in range(self.m):
+                    self.dZ[l][cur][m] = self.dA[l][cur][m] * self.sigmoid_backward_single(self.Z[l][cur][m])
             for m in range(self.m):
-                for n in range(self.dimensions[l]):
-                    self.dZ[l][m][n] = self.dA[l][m][n] * self.relu_backward(self.Z[l][m])[n]
-                    for prev_node in range(self.dimensions[l - 1]):
-                        if self.l2_regularization == True:
-                            self.dW[l][prev_node][n] += self.dZ[l][m][n] * self.A[l - 1][m][prev_node] + self.reg_term(self.W[l], self.lambd/self.m, l)[prev_node][n]
-                        else:
-                            self.dW[l][prev_node][n] += self.dZ[l][m][n] * self.A[l - 1][m][prev_node]
-                    self.db[l][n] += self.dZ[l][m][n]
                 for prev in range(self.dimensions[l-1]):
-                    for cur in range(self.dimensions[l]):
-                        self.dA[l-1][m][prev] += self.W[l][prev][cur] * self.dZ[l][cur][m]
+                    for cur in range(self.dimensions[L]):
+                        self.dW[l][prev][cur] += self.dZ[l][cur][m] * self.A[l-1][cur][m]
+                        self.db[l][cur] += self.dZ[l][cur][m]
+                    self.dA[l-1][cur][m] += self.W[l][prev][cur] * self.dZ[l][cur][m]
 
         # After the nested loops, divide the accumulated gradients by the number of examples (self.m)
         for l in range(len(self.dimensions) - 1, 0, -1):
