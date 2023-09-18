@@ -173,8 +173,8 @@ class FeedForwardNeuralNetwork:
                self.Z[l].append([])
                self.A[l].append([])
                for _ in range(self.m):
-                   self.Z[l][c].append(self.epsilon)
-                   self.A[l][c].append(self.epsilon)
+                   self.Z[l][c].append(0)
+                   self.A[l][c].append(0)
 
     def initialize_gradients(self):     # create inital representation of gradients of parameters as same as the parameters
         for _ in range(0, len(self.dimensions)):        # iterate through each layer and add empty list to W/b
@@ -306,12 +306,14 @@ class FeedForwardNeuralNetwork:
                 for prev in range(self.dimensions[l-1]):
                     for cur in range(self.dimensions[l]):
                         self.Z[l][cur][m] = self.W[l][prev][cur] * self.A[l][cur][m]
+                        self.A[l][cur][m] = self.relu_single(self.Z[l][cur][m])
         
         L = len(self.dimensions)-1      # get index of last-layer
         for m in range(self.m):
             for prev in range(self.dimensions[L-1]):
                 for cur in range(self.dimensions[L]):
                     self.Z[L][cur][m] = self.W[L][prev][cur] * self.A[L][cur][m]
+                    self.A[L][cur][m] = self.sigmoid_single(self.Z[L][cur][m])
         
         # DECIDE PREDICTIONS
         predictions = []        # activations of the last-layer, the output values for each output node
@@ -358,7 +360,7 @@ class FeedForwardNeuralNetwork:
             return predictions
 
 
-    def compute_cost(self):     # CROSS-ENTROPY
+    def compute_cost(self):     # BINARY-CLASSIFICATION
         L = len(self.dimensions)-1      # get index of last-layer
         AL = self.A[L]      
         total_cost = 0
@@ -367,7 +369,6 @@ class FeedForwardNeuralNetwork:
             for m in range(self.m):     # iterate throughe each example index
                 y = self.Y[n][m]        # get the actual label of current ouput-node and current example
                 al = AL[n][m]           # get the activation of current example and current output-node of last-layer
-                print("al: " + str(al))
                 example_cost += y * mth.log(al) + (1 - y) * mth.log(1 - al)
             total_cost += example_cost / self.m     # average the example cost and add it to total-cost
         self.cost = -total_cost / (self.dimensions[L])
@@ -775,20 +776,20 @@ train_y = [
 
 
 if __name__ == "__main__":
-    nn = FeedForwardNeuralNetwork(train_x, train_y, layers_dims, 0.0075, 1, l2_regularization=False, binary_classification=True, multiclass_classification=False, optimizer="gradient descent", learning_rate_decay=False, gradient_descent_variant="batch")
+    nn = FeedForwardNeuralNetwork(train_x, train_y, layers_dims, 0.0075, 3, l2_regularization=False, binary_classification=True, multiclass_classification=False, optimizer="gradient descent", learning_rate_decay=False, gradient_descent_variant="batch")
     nn.train()
     #nn.check_gradients()
     #nn.evaluate_accuracy()
     #nn.predict([[0.1],[0.09],[0.12],[0.15]], [[0], [0]], show_preds=True)
 
-    iters = []
+    """iters = []
     for i in range(nn.num_iterations):
         if i%100 == 0 or i % 100 == 0 or i == nn.num_iterations - 1:
             iters.append(i)
     plt.plot(iters, nn.costs, label = "Cost", color="red")
     plt.xlim(0, 2500)
     plt.ylim(0.68, 0.70)
-    plt.show()
+    plt.show()"""
 
 
 
