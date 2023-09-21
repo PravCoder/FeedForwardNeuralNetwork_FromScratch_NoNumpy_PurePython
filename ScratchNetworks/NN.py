@@ -157,7 +157,8 @@ class FeedForwardNeuralNetwork:
             for prev in range(self.dimensions[l-1]):        # iterate all indicies of each node in previous layer and add empty list to W
                 self.W[l].append([])
                 for next in range(self.dimensions[l]):      # iterate all indicies of each node in current layer and use prev-node-index to add a initial weight value for that prev-node in current layer to W[l][prev]. Number of weights in a layer is n[l]*n[l-1] so using nested loop
-                    self.W[l][prev].append(float(np.random.randn() *0.01)) # UNCOMMENT THIS!
+                    # float(np.random.randn() *0.01))
+                    self.W[l][prev].append(0.018230189162016477) # UNCOMMENT THIS!
                     #self.W[l][prev].append(0)  # zero weight initlization COMMENT THIS!
             for _ in range(self.dimensions[l]):      # iterate each node index in current layer and add 0 for bias for current layer, there is a seperate bias for each node in each layer
                 self.b[l].append(0)
@@ -188,6 +189,7 @@ class FeedForwardNeuralNetwork:
                     #self.W[l][prev].append(0)  # zero weight initlization COMMENT THIS!
             for _ in range(self.dimensions[l]):      # iterate each node index in current layer and add 0 for bias for current layer, there is a seperate bias for each node in each layer
                 self.db[l].append(0)
+
         for _ in range(0, len(self.dimensions)):        # iterate through each layer index and add empty list to Z/A
             self.dZ.append([])
             self.dA.append([])
@@ -297,24 +299,31 @@ class FeedForwardNeuralNetwork:
         return weights
 
     def forward_propagation(self, predict=False, show_predictions=False, acutal_y=None):        # computes the weighted sum and activations for each node in network
+        # Initialize the first layer's activations with input data
         for cur in range(self.dimensions[0]):
             for m in range(self.m):
                 self.A[0][cur][m] = self.X[cur][m]
-
-        for l in range(1, len(self.dimensions)-1):
+        # Loop through layers and calculate activations
+        for l in range(1, len(self.dimensions)):
             for m in range(self.m):
-                for prev in range(self.dimensions[l-1]):
-                    for cur in range(self.dimensions[l]):
-                        self.Z[l][cur][m] = self.W[l][prev][cur] * self.A[l][cur][m]
-                        self.A[l][cur][m] = self.relu_single(self.Z[l][cur][m])
-        
-        L = len(self.dimensions)-1      # get index of last-layer
+                for cur in range(self.dimensions[l]):
+                    # Calculate weighted sum (Z) for the current node using nested loops
+                    self.Z[l][cur][m] = 0
+                    for prev in range(self.dimensions[l - 1]):
+                        self.Z[l][cur][m] += self.W[l][prev][cur] * self.A[l - 1][prev][m] + self.b[l][cur]
+                    # Apply the ReLU activation function for hidden layers
+                    self.A[l][cur][m] = self.relu_single(self.Z[l][cur][m])
+        # Calculate the final layer's activations with the sigmoid activation function
+        L = len(self.dimensions) - 1
         for m in range(self.m):
-            for prev in range(self.dimensions[L-1]):
-                for cur in range(self.dimensions[L]):
-                    self.Z[L][cur][m] = self.W[L][prev][cur] * self.A[L][cur][m]
-                    self.A[L][cur][m] = self.sigmoid_single(self.Z[L][cur][m])
-        
+            for cur in range(self.dimensions[L]):
+                self.Z[L][cur][m] = 0
+                for prev in range(self.dimensions[L - 1]):
+                    self.Z[L][cur][m] += self.W[L][prev][cur] * self.A[L - 1][prev][m] + self.b[L][cur]
+                # Apply the sigmoid activation function for the output layer
+                self.A[L][cur][m] = self.sigmoid_single(self.Z[L][cur][m])
+
+
         # DECIDE PREDICTIONS
         predictions = []        # activations of the last-layer, the output values for each output node
         # BINARY-CLASSIFICATION PREDICTIONS
@@ -364,14 +373,16 @@ class FeedForwardNeuralNetwork:
         L = len(self.dimensions)-1      # get index of last-layer
         AL = self.A[L]      
         total_cost = 0
-        for n in range(self.dimensions[L]):     # iterate each node index in last-layer
+
+        for m in range(self.m):     # iterate each node index in last-layer
             example_cost = 0
-            for m in range(self.m):     # iterate throughe each example index
-                y = self.Y[n][m]        # get the actual label of current ouput-node and current example
-                al = AL[n][m]           # get the activation of current example and current output-node of last-layer
-                example_cost += y * mth.log(al) + (1 - y) * mth.log(1 - al)
-            total_cost += example_cost / self.m     # average the example cost and add it to total-cost
-        self.cost = -total_cost / (self.dimensions[L])
+            for cur in range(self.dimensions[L]):     # iterate throughe each example index
+                y = self.Y[cur][m]        # get the actual label of current ouput-node and current example
+                al = AL[cur][m]           # get the activation of current example and current output-node of last-layer
+                example_cost += y * np.log(al) + (1 - y) * np.log(1 - al)
+
+            total_cost += example_cost      # average the example cost and add it to total-cost
+        self.cost = -total_cost / self.m
 
     def compute_cost_categorical(self):
         L = len(self.dimensions) - 1
@@ -443,11 +454,12 @@ class FeedForwardNeuralNetwork:
         return z
     def sigmoid_backward_single(self, z):
         return self.sigmoid_single(z) * (1-self.sigmoid_single(z))
-    def relu_single(self, x):
+    def relu_single(self, x):  # TODO: fix relu formula? MAX or return 1/0??????
         if x > 0:
             return 1
         else:
             return 0
+        #return max(0, x) 
     def relu_backward(self, z):
         for i, val in enumerate(z):
             if z[i] > 0:
@@ -468,8 +480,8 @@ class FeedForwardNeuralNetwork:
             for prev in range(self.dimensions[l-1]):
                 self.dW[l].append([])
                 for next in range(self.dimensions[l]):
-                    self.dW[l][prev].append(float(np.random.randn() *0.01))
-            for next in range(self.dimensions[l]):
+                    self.dW[l][prev].append(0)
+            for cur in range(self.dimensions[l]):
                 self.db[l].append(0)
 
         for cur in range(self.dimensions[L]):
@@ -700,7 +712,7 @@ class FeedForwardNeuralNetwork:
                     self.compute_cost()
                 if self.multiclass_classification == True:  # Can also call normal cross entropy 
                     self.compute_cost()
-                self.backward_propagation()
+                #self.backward_propagation()   # DISABLE BACKPROP TO PRINT GRADIENTS
                 # check optimization algorithm
                 if self.optimizer == "gradient descent":
                     self.update_parameters_gradient_descent()
@@ -759,29 +771,36 @@ class FeedForwardNeuralNetwork:
             self.epoch_num += 1
 
 # STATUS: Increasing cost for single/multiple output neurons possible due to incorrect backprop implementation and cost function.
-layers_dims = [4, 2, 3, 4, 1]  # num of neurons of each layer
+layers_dims = [1, 2, 1]  # num of neurons of each layer
 
 # each row represents inputs for each input node, each element in a row are all the example input values for that input node. To get all of the inputs for a specific example use that same index in each row
 train_x = [
-    [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.9, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0, 1.5, 0.5, 0.1, 0.2, 0.12, 2.3, 0.49, 2.34, 1.12, 1.26, 1.47, 0.69, 0.96, 2.4, 4.5, 6.8, 8.9, 0.2, 9.9, 8.8, 6.4, 5.9, 3.9, 2.9, 9.4, 8.3, 3.6, 9.7, 4.0, 2.6, 2.5, 6.7, 6.5, 6.6, 6.2, 5.0, 2.4, 6.1, 5.3, 3.2, 3.1, 2.1, 8.1, 8.4, 8.5, 9.1, 9.6, 6.6, 1.1, 7.5, 7.1, 7.4, 8.6, 6.8, 2.7, 7.2, 9.6, 5.4, 9.7, 3.5, 2.1, 7.7, 8.8, 4.0, 3.9, 8.5, 7.0, 1.0, 3.0, 4.0, 8.0, 9.0, 9.2, 9.4, 4.4, 3.3, 1.1, 2.2, 8.8, 7.6, 6.8],
-    [0.09, 0.19, 0.28, 0.37, 0.51, 0.64, 0.75, 0.83, 1.05, 1.12, 1.24, 1.33, 1.44, 1.52, 1.66, 1.73, 1.82, 1.96, 2.01, 1.52, 0.52, 0.08, 0.19, 0.11, 2.27, 0.47, 2.31, 1.16, 1.29, 1.37, 0.60, 0.91, 2.26, 4.43, 6.65, 8.81, 0.18, 9.74, 8.72, 6.29, 5.86, 3.81, 2.85, 9.41, 8.23, 3.58, 9.68, 3.95, 2.51, 2.49, 6.61, 6.46, 6.60, 6.07, 4.94, 2.32, 6.03, 5.31, 3.11, 3.09, 1.97, 8.06, 8.38, 8.40, 9.04, 9.53, 6.46, 1.02, 7.47, 7.00, 7.42, 8.47, 6.72, 2.68, 7.16, 9.57, 5.47, 9.78, 3.44, 1.99, 7.70, 8.82, 3.95, 3.88, 8.40, 7.09, 0.98, 2.90, 3.95, 8.06, 8.98, 9.19, 9.48, 4.35, 3.23, 1.00, 2.15, 8.68, 7.48, 6.64],
-    [0.12, 0.21, 0.35, 0.42, 0.54, 0.61, 0.78, 0.85, 1.02, 1.14, 1.28, 1.30, 1.42, 1.59, 1.68, 1.78, 1.85, 1.92, 2.06, 1.45, 0.46, 0.13, 0.26, 0.18, 2.32, 0.55, 2.39, 1.18, 1.23, 1.42, 0.67, 0.87, 2.44, 4.59, 6.70, 8.94, 0.27, 9.89, 8.77, 6.47, 5.91, 3.92, 2.88, 9.49, 8.32, 3.64, 9.78, 4.12, 2.68, 2.58, 6.72, 6.51, 6.68, 6.18, 4.96, 2.42, 6.12, 5.33, 3.24, 3.18, 2.08, 8.19, 8.45, 8.57, 9.10, 9.63, 6.73, 1.12, 7.53, 7.16, 7.54, 8.63, 6.86, 2.78, 7.26, 9.69, 5.65, 9.89, 3.65, 2.16, 7.77, 8.91, 4.18, 3.98, 8.60, 7.05, 1.10, 3.12, 4.16, 8.16, 9.03, 9.25, 9.58, 4.47, 3.38, 1.16, 2.23, 8.88, 7.68, 6.81],
-    [0.15, 0.24, 0.32, 0.49, 0.50, 0.69, 0.73, 0.88, 1.01, 1.19, 1.23, 1.36, 1.40, 1.57, 1.65, 1.72, 1.87, 1.98, 2.12, 1.59, 0.59, 0.15, 0.29, 0.16, 2.25, 0.53, 2.28, 1.15, 1.32, 1.44, 0.63, 0.95, 2.45, 4.49, 6.77, 8.85, 0.23, 9.81, 8.84, 6.41, 5.83, 3.88, 2.92, 9.47, 8.36, 3.66, 9.72, 4.10, 2.61, 2.51, 6.67, 6.53, 6.67, 6.27, 4.98, 2.48, 6.17, 5.34, 3.18, 3.19, 2.15, 8.10, 8.39, 8.56, 9.18, 9.70, 6.64, 1.10, 7.54, 7.02, 7.47, 8.67, 6.80, 2.76, 7.22, 9.65, 5.56, 9.76, 3.48, 2.10, 7.74, 8.85, 4.10, 3.95, 8.53, 7.03, 0.95, 2.96, 3.92, 8.08, 8.94, 9.21, 9.45, 4.33, 3.28, 1.06, 2.28, 8.78, 7.58, 6.86]
+    [0.1, 0.2, 0.3],
 ]
 # each row represents outputs for each output node, each element in a row are all the example output values for that output node. To get all of the outputs for a specific example use that same index in each row
 train_y = [
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1],
+    [0, 1, 0],
 ]
 
 
 
 if __name__ == "__main__":
-    nn = FeedForwardNeuralNetwork(train_x, train_y, layers_dims, 0.0075, 3, l2_regularization=False, binary_classification=True, multiclass_classification=False, optimizer="gradient descent", learning_rate_decay=False, gradient_descent_variant="batch")
+    nn = FeedForwardNeuralNetwork(train_x, train_y, layers_dims, 0.0075, 1, l2_regularization=False, binary_classification=True, multiclass_classification=False, optimizer="gradient descent", learning_rate_decay=False, gradient_descent_variant="batch")
     nn.train()
+    for l in range(1, len(nn.dimensions)):
+        print("LAYER: " + str(l))
+        for cur in range(nn.dimensions[l]):
+            for m in range(nn.m):  # Z[node][example]
+                print("Z["+str(cur+1)+"]"+"["+str(m+1)+"]: "+str(nn.Z[l][cur][m]))
+    print("\n")
+    for l in range(1, len(nn.dimensions)):
+        print("LAYER: " + str(l))
+        for cur in range(nn.dimensions[l]):
+            for m in range(nn.m):  # Z[node][example]
+                print("A["+str(cur+1)+"]"+"["+str(m+1)+"]: "+str(nn.A[l][cur][m]))
     #nn.check_gradients()
     #nn.evaluate_accuracy()
     #nn.predict([[0.1],[0.09],[0.12],[0.15]], [[0], [0]], show_preds=True)
-
     """iters = []
     for i in range(nn.num_iterations):
         if i%100 == 0 or i % 100 == 0 or i == nn.num_iterations - 1:
@@ -794,12 +813,16 @@ if __name__ == "__main__":
 
 
 
-# TODO: Implement batch normalization.
+# NETWORK STATUS:
+# ocasionally decreases consistently
+# unpredictable behavoir
+# most of the time is approximately constant. 
+# Cost decreasing for always for constat weight initialzation.
 
-# TODO: backpropgatiaon equations and gradient computation for MSE
+# NOTE:
+# - backprop is disabled for 1 iteration. 
+# - forward_prop calculationa are matching paper calculations
 
-# TODO: Softmax layer and cost function for multiclass-classification.
-
-# TODO: fix math domain error for deep computations
-
-# TODO: implement Categorical cross-entropy for multiclass classifiction cost computation
+# TODO:
+# 1) compute on network on paper with constant weights and print network compuataions and compare
+# 2) Relu activation: max yields constant cost returning 0/1 yields decreasing cost.

@@ -440,12 +440,13 @@ class FeedForwardNeuralNetwork:
             z[i] = self.sigmoid_single(val) * (1-self.sigmoid_single(val))
         return z
     
-
-    def relu_single(self, x):
-        if x > 0:
+ 
+    def relu_single(self, x): # TODO: whcih relu version activation to use?
+        """if x > 0:
             return 1
         else:
-            return 0
+            return 0"""
+        return max(0, x)
     def relu_backward(self, z):
         for i, val in enumerate(z):
             if z[i] > 0:
