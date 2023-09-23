@@ -206,8 +206,8 @@ class FeedForwardNeuralNetwork:
 
 
     def forward_propagation(self, predict=False, show_predictions=False, acutal_y=None):        # computes the weighted sum and activations for each node in network
-        for cur in range(self.dimensions[0]):
-            for m in range(self.m):
+        for m in range(self.m):
+            for cur in range(self.dimensions[0]):
                 self.A[0][cur][m] = self.X[cur][m]
         for l in range(1, len(self.dimensions)):
             for m in range(self.m):
@@ -363,7 +363,6 @@ class FeedForwardNeuralNetwork:
                 al = self.A[L][cur][m]
                 self.dA[L][cur][m] = -((y / al) - ((1 - y) / (1 - al)))
         
-        
         # LAST LAYER:
         for cur in range(self.dimensions[L]):
             for m in range(self.m):
@@ -383,6 +382,8 @@ class FeedForwardNeuralNetwork:
             for m in range(self.m):
                 for prev in range(self.dimensions[l-1]):
                     for cur in range(self.dimensions[l]):
+                        print(l-1, cur, m)
+                        print(self.A[l-1][cur][m])
                         self.dW[l][prev][cur] += self.dZ[l][cur][m] * self.A[l-1][cur][m]
                         self.db[l][cur] += self.dZ[l][cur][m]
                     self.dA[l-1][cur][m] += self.W[l][prev][cur] * self.dZ[l][cur][m]
@@ -590,3 +591,6 @@ if __name__ == "__main__":
 # 1) compute on network on paper with constant weights and print network compuataions and compare
 # 2) Relu activation: max yields constant cost returning 0/1 yields decreasing cost.
 # 3) Constant cost with 100 examples.
+# 4) ile "/Users/pravachanpatra/Documents/PYTHON/AI:ML:DL/FeedForwardNeuralNetwork/ScratchNetworks/NN.py", line 385, in backward_propagation
+#    self.dW[l][prev][cur] += self.dZ[l][cur][m] * self.A[l-1][cur][m]
+#IndexError: list index out of range
