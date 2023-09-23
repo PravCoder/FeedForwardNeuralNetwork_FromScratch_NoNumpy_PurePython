@@ -1,5 +1,5 @@
 import numpy as np      # ONLY USING NUMPY TO PRINT SHAPES OF PYTHON MATRICIES IN show_shapes METHOD
-import math as mth      # to perform mathmatical computations
+import math      # to perform mathmatical computations
 import matplotlib.pyplot as plt     # used to visualize the cost
 import copy     # used as 2nd check so that the data of a object is copied and not its reference
 
@@ -116,20 +116,6 @@ class FeedForwardNeuralNetwork:
         else:
             print("Gradient Checking.....Correct backpropagation! Difference: " + str(difference))
 
-    def gradients_to_vector(self, grads):
-        vector = []
-        for l in range(1, len(self.dimensions)):
-            for prev in range(self.dimensions[l-1]):
-                for n in range(self.dimensions[l]):
-                    vector.append(grads[l][prev][n])
-        return vector
-    def l2_norm(self, vector):
-        sum_squares = sum(mth.pow(x, 2) for x in vector)
-        return mth.sqrt(sum_squares)
-    def subtract_vector(self, v1,v2):
-        for i, val in enumerate(v1):
-            v1[i] = val - v2[i]
-        return v1
     def get_input_info(self):
         #print("X: "+str(self.X))
         for row in self.X:
@@ -205,80 +191,6 @@ class FeedForwardNeuralNetwork:
         #self.show_shapes(self.dZ, "dZ")
         #self.show_shapes(self.dA, "dA")
 
-    def initialize_velocity(self):
-        for _ in range(0, len(self.dimensions)):        # iterate through each layer and add empty list to W/b
-            self.vdw.append([])
-            self.vdb.append([])
-        for l in range(1, len(self.dimensions)):        # iterate from 1st layer to last layer index
-            for prev in range(self.dimensions[l-1]):        # iterate all indicies of each node in previous layer and add empty list to W
-                self.vdw[l].append([])
-                for next in range(self.dimensions[l]):      # iterate all indicies of each node in current layer and use prev-node-index to add a initial weight value for that prev-node in current layer to W[l][prev]. Number of weights in a layer is n[l]*n[l-1] so using nested loop
-                    self.vdw[l][prev].append(0)
-            for _ in range(self.dimensions[l]):      # iterate each node index in current layer and add 0 for bias for current layer, there is a seperate bias for each node in each layer
-                self.vdb[l].append(0)
-        #self.show_shapes(self.W, "W")
-        #self.show_shapes(self.b, "b")
-
-    def initialize_adam(self):
-        for _ in range(0, len(self.dimensions)):        # iterate through each layer and add empty list to W/b
-            self.vdw.append([])
-            self.vdb.append([])
-            self.sdw.append([])
-            self.sdb.append([])
-        for l in range(1, len(self.dimensions)):        # iterate from 1st layer to last layer index
-            for prev in range(self.dimensions[l-1]):        # iterate all indicies of each node in previous layer and add empty list to W
-                self.vdw[l].append([])
-                self.sdw[l].append([])
-                for next in range(self.dimensions[l]):      # iterate all indicies of each node in current layer and use prev-node-index to add a initial weight value for that prev-node in current layer to W[l][prev]. Number of weights in a layer is n[l]*n[l-1] so using nested loop
-                    self.vdw[l][prev].append(0)
-                    self.sdw[l][prev].append(0)
-            for _ in range(self.dimensions[l]):      # iterate each node index in current layer and add 0 for bias for current layer, there is a seperate bias for each node in each layer
-                self.vdb[l].append(0)
-                self.sdb[l].append(0)
-        #self.show_shapes(self.W, "W")
-        #self.show_shapes(self.b, "b")
-    
-    def dot_product_w_a(self, w, a, num_acts, num_nodes, layer_indx):
-        z = []
-        w_indx = 0
-        a_indx = 0
-        for n in range(num_nodes):
-            a_indx = 0
-            max_diff = 0
-            cur_sum = 0
-            if w_indx + num_acts > len(w):
-                max_diff = len(w)
-            else:
-                max_diff = w_indx + num_acts
-            for i in range(w_indx, max_diff):
-                cur_sum += w[i]*a[a_indx]
-
-                a_indx += 1
-                w_indx += 1
-            cur_sum += self.b[layer_indx][n]
-            z.append(cur_sum)
-            
-        return z
-    def dot_prod(self, w, a, num_acts, num_nodes, layer_indx): # No bias for each sum
-        z = []
-        w_indx = 0
-        a_indx = 0
-        for n in range(num_nodes):
-            a_indx = 0
-            max_diff = 0
-            cur_sum = 0
-            if w_indx + num_acts > len(w):
-                max_diff = len(w)
-            else:
-                max_diff = w_indx + num_acts
-            for i in range(w_indx, max_diff):
-                cur_sum += w[i]*a[a_indx]
-
-                a_indx += 1
-                w_indx += 1
-            z.append(cur_sum)
-            
-        return z
 
     def sigmoid(self, z):       # given z-values for certain layer in 1D-list computes the sigmoid formula on each value and returns activated list
         for i, val in enumerate(z):
@@ -291,36 +203,25 @@ class FeedForwardNeuralNetwork:
             else:
                 z[i] = 0
         return z
-    def get_weights_for_layer(self, w):     # takes in self.W[l] and adds all of the weights for that layer into a 1D-list for easy dot-product computation
-        weights = []
-        for prev_arr in w:      # iterate through each arr that represents each node in previous-layer
-            for connection in prev_arr:     # iterate through each weight that is connected to the current node in previous-layer adn add it to 1D-list
-                weights.append(connection)
-        return weights
+
 
     def forward_propagation(self, predict=False, show_predictions=False, acutal_y=None):        # computes the weighted sum and activations for each node in network
-        # Initialize the first layer's activations with input data
         for cur in range(self.dimensions[0]):
             for m in range(self.m):
                 self.A[0][cur][m] = self.X[cur][m]
-        # Loop through layers and calculate activations
         for l in range(1, len(self.dimensions)):
             for m in range(self.m):
                 for cur in range(self.dimensions[l]):
-                    # Calculate weighted sum (Z) for the current node using nested loops
                     self.Z[l][cur][m] = 0
                     for prev in range(self.dimensions[l - 1]):
                         self.Z[l][cur][m] += self.W[l][prev][cur] * self.A[l - 1][prev][m] + self.b[l][cur]
-                    # Apply the ReLU activation function for hidden layers
                     self.A[l][cur][m] = self.relu_single(self.Z[l][cur][m])
-        # Calculate the final layer's activations with the sigmoid activation function
         L = len(self.dimensions) - 1
         for m in range(self.m):
             for cur in range(self.dimensions[L]):
                 self.Z[L][cur][m] = 0
                 for prev in range(self.dimensions[L - 1]):
                     self.Z[L][cur][m] += self.W[L][prev][cur] * self.A[L - 1][prev][m] + self.b[L][cur]
-                # Apply the sigmoid activation function for the output layer
                 self.A[L][cur][m] = self.sigmoid_single(self.Z[L][cur][m])
 
 
@@ -397,9 +298,9 @@ class FeedForwardNeuralNetwork:
 
                 if self.l2_regularization:
                     reg_term = self.lambd / 2 * self.square_sum(self.W[L], L)
-                    example_cost += -y * mth.log(al) + reg_term
+                    example_cost += -y * math.log(al) + reg_term
                 else:
-                    example_cost += -y * mth.log(al)
+                    example_cost += -y * math.log(al)
 
             total_cost += example_cost / self.m
 
@@ -412,42 +313,14 @@ class FeedForwardNeuralNetwork:
         for n in range(self.dimensions[L]): 
             for m in range(self.m):     
                 y = self.Y[n][m]        
-                al = AL[m][n]           
-                total_cost += mth.pow(al - y, 2)
+                al = AL[n][m]           
+                total_cost += math.pow(al - y, 2)
         self.cost = total_cost / self.m
 
-    def compute_cost_mini_batch(self):       # CROSS-ENTROPY
-        L = len(self.dimensions) - 1  
-        AL = self.A[L]
-        mini_batch_cost = 0
-        for n in range(self.dimensions[L]):  
-            example_cost = 0
-            for b in range(self.num_mini_batches):
-                y_mini = self.y_mini_batches[b]
-                for m in range(self.mini_batch_size):
-                    y = y_mini[n][m]
-                    al = AL[m][n]
-                    example_cost += y * mth.log(al) + (1 - y) * mth.log(1 - al)
-            mini_batch_cost = example_cost / self.mini_batch_size
-        self.cost = -mini_batch_cost / self.num_mini_batches
 
-
-    def square_sum(self, w, layer_num):
-        vals = []
-        for n in range(self.dimensions[layer_num]):
-            for prev_node in range(self.dimensions[layer_num-1]):
-                vals.append(w[prev_node][n])
-        return sum(vals)
-    
-    def reg_term(self, x, prod_term, layer_num):        # w = self.W[l], multiplies prod_term to every weight in self.W[l]
-        w = x
-        for n in range(self.dimensions[layer_num]):     # iterate through eahc node in current-layer
-            for prev_node in range(self.dimensions[layer_num-1]):       # iterate through each node index in previous-layer adn multiply prod_term to current weight
-                w[prev_node][n] *= prod_term            
-        return w
 
     def sigmoid_single(self, x):
-        return  1/(1+mth.exp(-x))
+        return  1/(1+math.exp(-x))
     def sigmoid_backward(self, z):
         for i, val in enumerate(z):
             z[i] = self.sigmoid_single(val) * (1-self.sigmoid_single(val))
@@ -455,7 +328,7 @@ class FeedForwardNeuralNetwork:
     def sigmoid_backward_single(self, z):
         return self.sigmoid_single(z) * (1-self.sigmoid_single(z))
     def relu_single(self, x):  # TODO: fix relu formula? MAX or return 1/0??????
-        if x > 0:
+        if x >= 0:
             return 1
         else:
             return 0
@@ -509,7 +382,7 @@ class FeedForwardNeuralNetwork:
                     self.dZ[l][cur][m] = self.dA[l][cur][m] * self.sigmoid_backward_single(self.Z[l][cur][m])
             for m in range(self.m):
                 for prev in range(self.dimensions[l-1]):
-                    for cur in range(self.dimensions[L]):
+                    for cur in range(self.dimensions[l]):
                         self.dW[l][prev][cur] += self.dZ[l][cur][m] * self.A[l-1][cur][m]
                         self.db[l][cur] += self.dZ[l][cur][m]
                     self.dA[l-1][cur][m] += self.W[l][prev][cur] * self.dZ[l][cur][m]
@@ -524,49 +397,16 @@ class FeedForwardNeuralNetwork:
 
     def update_parameters_gradient_descent(self):
         for l in range(1, len(self.dimensions)):
-            for n in range(self.dimensions[l]):
-                for prev_node in range(self.dimensions[l-1]):
-                    if self.l2_regularization == True:      
-                        self.W[l][prev_node][n] = self.W[l][prev_node][n] - self.reg_term(self.W[l],(self.learning_rate*self.lambd)/self.m, l)[prev_node][n] - self.reg_term(self.dW[l],self.learning_rate, l)[prev_node][n]
-                    else:
-                        self.W[l][prev_node][n] = self.W[l][prev_node][n]  - (self.learning_rate*self.dW[l][prev_node][n])
-                self.b[l][n]  = self.b[l][n]  - (self.learning_rate*self.db[l][n])
+            for cur in range(self.dimensions[l]):
+                for prev in range(self.dimensions[l-1]):
+                    self.W[l][prev][cur] = self.W[l][prev][cur] - self.learning_rate * self.dW[l][prev][cur]
+                self.b[l][cur] = self.b[l][cur] - self.learning_rate * self.b[l][cur]
 
-    def update_parameters_with_momentum(self):
-        for l in range(1, len(self.dimensions)):
-            for n in range(self.dimensions[l]):
-                for prev_node in range(self.dimensions[l-1]):
-                    # compute velocties for weights
-                    self.vdw[l][prev_node][n] = self.beta1*self.vdw[l][prev_node][n] + (1-self.beta1)*self.dW[l][prev_node][n]
-                    self.W[l][prev_node][n] = self.W[l][prev_node][n] - self.learning_rate*self.vdw[l][prev_node][n]
-                # compute velocities for bias
-                self.vdb[l][n] = self.beta1*self.vdb[l][n] + (1-self.beta1)*self.db[l][n]
-                self.b[l][n] = self.b[l][n] - self.learning_rate*self.vdb[l][n]
 
-    def update_parameters_with_adam(self):
-        for l in range(1, len(self.dimensions)):
-            for n in range(self.dimensions[l]):
-                for prev_node in range(self.dimensions[l-1]):
-                    # compute momentum/square vector for vdw/vdb
-                    self.vdw[l][prev_node][n] = self.beta1*self.vdw[l][prev_node][n] + (1-self.beta1)*self.dW[l][prev_node][n]
-                    self.sdw[l][prev_node][n] = self.beta2*self.sdw[l][prev_node][n] + (1-self.beta2)*(mth.pow(self.dW[l][prev_node][n], 2))
-                    # bias correction for vdw/sdw
-                    self.vdw[l][prev_node][n] = self.vdw[l][prev_node][n]/(1-mth.pow(self.beta1,self.epoch_num))
-                    self.sdw[l][prev_node][n] = self.sdw[l][prev_node][n]/(1-mth.pow(self.beta2,self.epoch_num))
-                    # update weights
-                    self.W[l][prev_node][n] = self.W[l][prev_node][n] - self.learning_rate*(self.vdw[l][prev_node][n]/mth.sqrt(self.sdw[l][prev_node][n])+self.epsilon)
-                # compute momentum/square vector for vdb/sdb
-                self.vdb[l][n] = self.beta1*self.vdb[l][n] + (1-self.beta1)*self.db[l][n]
-                self.sdb[l][n] = self.beta2*self.sdb[l][n] + (1-self.beta2)*(mth.pow(self.db[l][n], 2))
-                # bias correction for vdb/sdb
-                self.vdb[l][n] = self.vdb[l][n]/(1-mth.pow(self.beta1, self.epoch_num))
-                self.sdb[l][n] = self.sdb[l][n]/(1-mth.pow(self.beta2, self.epoch_num))
-                # update bias
-                self.b[l][n] = self.b[l][n] - self.learning_rate*self.vdb[l][n]/(mth.sqrt(self.sdb[l][n])+self.epsilon)
 
     def update_learning_rate(self):
         #self.learning_rate = 1/(1+self.decay_rate*self.epoch_num) * self.learning_rate0  # decay update at each iteration
-        self.learning_rate = self.learning_rate0 / (1+self.decay_rate * mth.floor(self.epoch_num/self.time_interval)) # schedule learing_rate in time intervals
+        self.learning_rate = self.learning_rate0 / (1+self.decay_rate * math.floor(self.epoch_num/self.time_interval)) # schedule learing_rate in time intervals
                 
     def predict(self, x, y, show_preds=False): 
         new_x = x
@@ -652,27 +492,6 @@ class FeedForwardNeuralNetwork:
             print("Examples: " + str(num_examples))
             print("Accuracy: " + str(percentage))
             print("---------------")
-
-
-    def create_mini_batches(self):
-        self.num_mini_batches = self.examples_saved // self.mini_batch_size
-        #print(self.examples_saved)
-        x_train, y_train = self.saved_X, self.saved_Y
-        for i in range(self.num_mini_batches):
-            start_indx = i * self.mini_batch_size
-            end_indx = (i+1) * self.mini_batch_size
-            x_mini, y_mini = [], []
-            
-            for input_node in range(self.dimensions[0]):
-                x_mini.append(x_train[input_node][start_indx: end_indx])
-                
-            for output_node in range(self.dimensions[-1]):
-                y_mini.append(y_train[output_node][start_indx: end_indx])
-
-            self.x_mini_batches.append(x_mini)
-            self.y_mini_batches.append(y_mini)
-        #print(self.x_mini_batches[1])
-
     def print_info(self):
         print("Neural Network Dimensions: " + str(self.dimensions))
         print("Examples m: " + str(self.m))
@@ -689,81 +508,17 @@ class FeedForwardNeuralNetwork:
             algorithms.append("Learning Rate Decay")
         print("Algorithms: " + ", ".join(algorithms))
         print("-----------------------")
-
-
- 
     def train(self):
         self.get_input_info()
         self.initialize_parameters()
         self.initialize_calculations()
         self.initialize_gradients()
-        if self.optimizer == "momentum": self.initialize_velocity()
-        if self.optimizer == "adam": self.initialize_adam()
-
         self.print_info()
         for i in range(self.num_iterations):
-            # BATCH GRADIENT DESCENT
-            if self.gradient_descent_variant == "batch":
-                self.mini_batch_size = self.m  # change batch size of total number of examples even though we do not use it
-                self.forward_propagation()
-                if self.regression == True: 
-                    self.compute_cost_MSE()
-                if self.binary_classification == True:   # classification tasks use same cost function
-                    self.compute_cost()
-                if self.multiclass_classification == True:  # Can also call normal cross entropy 
-                    self.compute_cost()
-                #self.backward_propagation()   # DISABLE BACKPROP TO PRINT GRADIENTS
-                # check optimization algorithm
-                if self.optimizer == "gradient descent":
-                    self.update_parameters_gradient_descent()
-                if self.optimizer == "momentum":
-                    self.update_parameters_with_momentum()
-                if self.optimizer == "adam":
-                    self.update_parameters_with_adam()
-                if self.learning_rate_decay == True:
-                    self.update_learning_rate()
-                #print("Weights: " + str(self.W))
-                #print("Grads: " + str(self.dW))
-            # MINI-BATCH GRADIENT DESCENT
-            if self.gradient_descent_variant == "mini-batch":
-                self.mini_batch_size = self.mini_batch_size  # redundacy batch size should already be set in _init__
-                self.m = self.mini_batch_size
-                self.create_mini_batches()
-                for b in range(self.num_mini_batches):
-                    self.X = self.x_mini_batches[b]
-                    self.Y = self.y_mini_batches[b]
-                    self.forward_propagation()
-                    self.compute_cost_mini_batch()
-                    self.backward_propagation()
-                    # check optimization algorithm
-                    if self.optimizer == "gradient descent":
-                        self.update_parameters_gradient_descent()
-                    if self.optimizer == "momentum":
-                        self.update_parameters_with_momentum()
-                    if self.optimizer == "adam":
-                        self.update_parameters_with_adam()
-                    if self.learning_rate_decay == True:
-                        self.update_learning_rate()
-            # STOCHASTIC GRADIENT DESCENT
-            if self.gradient_descent_variant == "stochastic":
-                self.mini_batch_size = 1        # change batch size to 1
-                self.m = self.mini_batch_size
-                self.create_mini_batches()
-                for b in range(self.num_mini_batches):
-                    self.X = self.x_mini_batches[b]
-                    self.Y = self.y_mini_batches[b]
-                    self.forward_propagation()
-                    self.compute_cost_mini_batch()
-                    self.backward_propagation()
-                    # check optimization algorithm
-                    if self.optimizer == "gradient descent":
-                        self.update_parameters_gradient_descent()
-                    if self.optimizer == "momentum":
-                        self.update_parameters_with_momentum()
-                    if self.optimizer == "adam":
-                        self.update_parameters_with_adam()
-                    if self.learning_rate_decay == True:
-                        self.update_learning_rate()
+            self.forward_propagation()
+            self.compute_cost()
+            self.backward_propagation()   # DISABLE BACKPROP TO PRINT GRADIENTS
+            self.update_parameters_gradient_descent()
 
             if i % 100 == 0 or i == self.num_iterations - 1:
                 print('Cost after {} iterations is {}'.format(i, self.cost))
@@ -781,13 +536,22 @@ train_x = [
 train_y = [
     [0, 1, 0],
 ]
-
+"""train_x = [
+    [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.9, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0, 1.5, 0.5, 0.1, 0.2, 0.12, 2.3, 0.49, 2.34, 1.12, 1.26, 1.47, 0.69, 0.96, 2.4, 4.5, 6.8, 8.9, 0.2, 9.9, 8.8, 6.4, 5.9, 3.9, 2.9, 9.4, 8.3, 3.6, 9.7, 4.0, 2.6, 2.5, 6.7, 6.5, 6.6, 6.2, 5.0, 2.4, 6.1, 5.3, 3.2, 3.1, 2.1, 8.1, 8.4, 8.5, 9.1, 9.6, 6.6, 1.1, 7.5, 7.1, 7.4, 8.6, 6.8, 2.7, 7.2, 9.6, 5.4, 9.7, 3.5, 2.1, 7.7, 8.8, 4.0, 3.9, 8.5, 7.0, 1.0, 3.0, 4.0, 8.0, 9.0, 9.2, 9.4, 4.4, 3.3, 1.1, 2.2, 8.8, 7.6, 6.8],
+    [0.09, 0.19, 0.28, 0.37, 0.51, 0.64, 0.75, 0.83, 1.05, 1.12, 1.24, 1.33, 1.44, 1.52, 1.66, 1.73, 1.82, 1.96, 2.01, 1.52, 0.52, 0.08, 0.19, 0.11, 2.27, 0.47, 2.31, 1.16, 1.29, 1.37, 0.60, 0.91, 2.26, 4.43, 6.65, 8.81, 0.18, 9.74, 8.72, 6.29, 5.86, 3.81, 2.85, 9.41, 8.23, 3.58, 9.68, 3.95, 2.51, 2.49, 6.61, 6.46, 6.60, 6.07, 4.94, 2.32, 6.03, 5.31, 3.11, 3.09, 1.97, 8.06, 8.38, 8.40, 9.04, 9.53, 6.46, 1.02, 7.47, 7.00, 7.42, 8.47, 6.72, 2.68, 7.16, 9.57, 5.47, 9.78, 3.44, 1.99, 7.70, 8.82, 3.95, 3.88, 8.40, 7.09, 0.98, 2.90, 3.95, 8.06, 8.98, 9.19, 9.48, 4.35, 3.23, 1.00, 2.15, 8.68, 7.48, 6.64],
+    [0.12, 0.21, 0.35, 0.42, 0.54, 0.61, 0.78, 0.85, 1.02, 1.14, 1.28, 1.30, 1.42, 1.59, 1.68, 1.78, 1.85, 1.92, 2.06, 1.45, 0.46, 0.13, 0.26, 0.18, 2.32, 0.55, 2.39, 1.18, 1.23, 1.42, 0.67, 0.87, 2.44, 4.59, 6.70, 8.94, 0.27, 9.89, 8.77, 6.47, 5.91, 3.92, 2.88, 9.49, 8.32, 3.64, 9.78, 4.12, 2.68, 2.58, 6.72, 6.51, 6.68, 6.18, 4.96, 2.42, 6.12, 5.33, 3.24, 3.18, 2.08, 8.19, 8.45, 8.57, 9.10, 9.63, 6.73, 1.12, 7.53, 7.16, 7.54, 8.63, 6.86, 2.78, 7.26, 9.69, 5.65, 9.89, 3.65, 2.16, 7.77, 8.91, 4.18, 3.98, 8.60, 7.05, 1.10, 3.12, 4.16, 8.16, 9.03, 9.25, 9.58, 4.47, 3.38, 1.16, 2.23, 8.88, 7.68, 6.81],
+    [0.15, 0.24, 0.32, 0.49, 0.50, 0.69, 0.73, 0.88, 1.01, 1.19, 1.23, 1.36, 1.40, 1.57, 1.65, 1.72, 1.87, 1.98, 2.12, 1.59, 0.59, 0.15, 0.29, 0.16, 2.25, 0.53, 2.28, 1.15, 1.32, 1.44, 0.63, 0.95, 2.45, 4.49, 6.77, 8.85, 0.23, 9.81, 8.84, 6.41, 5.83, 3.88, 2.92, 9.47, 8.36, 3.66, 9.72, 4.10, 2.61, 2.51, 6.67, 6.53, 6.67, 6.27, 4.98, 2.48, 6.17, 5.34, 3.18, 3.19, 2.15, 8.10, 8.39, 8.56, 9.18, 9.70, 6.64, 1.10, 7.54, 7.02, 7.47, 8.67, 6.80, 2.76, 7.22, 9.65, 5.56, 9.76, 3.48, 2.10, 7.74, 8.85, 4.10, 3.95, 8.53, 7.03, 0.95, 2.96, 3.92, 8.08, 8.94, 9.21, 9.45, 4.33, 3.28, 1.06, 2.28, 8.78, 7.58, 6.86]
+]
+# each row represents outputs for each output node, each element in a row are all the example output values for that output node. To get all of the outputs for a specific example use that same index in each row
+train_y = [
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1],
+]"""
 
 
 if __name__ == "__main__":
-    nn = FeedForwardNeuralNetwork(train_x, train_y, layers_dims, 0.0075, 1, l2_regularization=False, binary_classification=True, multiclass_classification=False, optimizer="gradient descent", learning_rate_decay=False, gradient_descent_variant="batch")
+    nn = FeedForwardNeuralNetwork(train_x, train_y, layers_dims, 0.0075, 500, l2_regularization=False, binary_classification=True, multiclass_classification=False, optimizer="gradient descent", learning_rate_decay=False, gradient_descent_variant="batch")
     nn.train()
-    for l in range(1, len(nn.dimensions)):
+    """for l in range(1, len(nn.dimensions)):
         print("LAYER: " + str(l))
         for cur in range(nn.dimensions[l]):
             for m in range(nn.m):  # Z[node][example]
@@ -797,10 +561,8 @@ if __name__ == "__main__":
         print("LAYER: " + str(l))
         for cur in range(nn.dimensions[l]):
             for m in range(nn.m):  # Z[node][example]
-                print("A["+str(cur+1)+"]"+"["+str(m+1)+"]: "+str(nn.A[l][cur][m]))
-    #nn.check_gradients()
-    #nn.evaluate_accuracy()
-    #nn.predict([[0.1],[0.09],[0.12],[0.15]], [[0], [0]], show_preds=True)
+                print("A["+str(cur+1)+"]"+"["+str(m+1)+"]: "+str(nn.A[l][cur][m]))"""
+    
     """iters = []
     for i in range(nn.num_iterations):
         if i%100 == 0 or i % 100 == 0 or i == nn.num_iterations - 1:
@@ -817,12 +579,14 @@ if __name__ == "__main__":
 # ocasionally decreases consistently
 # unpredictable behavoir
 # most of the time is approximately constant. 
+
 # Cost decreasing for always for constat weight initialzation.
 
 # NOTE:
 # - backprop is disabled for 1 iteration. 
-# - forward_prop calculationa are matching paper calculations
+# - forward_prop calculations are matching paper calculations
 
 # TODO:
 # 1) compute on network on paper with constant weights and print network compuataions and compare
 # 2) Relu activation: max yields constant cost returning 0/1 yields decreasing cost.
+# 3) Constant cost with 100 examples.
