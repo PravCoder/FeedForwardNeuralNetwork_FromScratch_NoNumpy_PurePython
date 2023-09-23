@@ -144,7 +144,7 @@ class FeedForwardNeuralNetwork:
                 self.W[l].append([])
                 for next in range(self.dimensions[l]):      # iterate all indicies of each node in current layer and use prev-node-index to add a initial weight value for that prev-node in current layer to W[l][prev]. Number of weights in a layer is n[l]*n[l-1] so using nested loop
                     # float(np.random.randn() *0.01))
-                    self.W[l][prev].append(0.018230189162016477) # UNCOMMENT THIS!
+                    self.W[l][prev].append(np.random.randn() *0.01) # UNCOMMENT THIS! 0.018230189162016477
                     #self.W[l][prev].append(0)  # zero weight initlization COMMENT THIS!
             for _ in range(self.dimensions[l]):      # iterate each node index in current layer and add 0 for bias for current layer, there is a seperate bias for each node in each layer
                 self.b[l].append(0)
@@ -222,7 +222,10 @@ class FeedForwardNeuralNetwork:
                 self.Z[L][cur][m] = 0
                 for prev in range(self.dimensions[L - 1]):
                     self.Z[L][cur][m] += self.W[L][prev][cur] * self.A[L - 1][prev][m] + self.b[L][cur]
-                self.A[L][cur][m] = self.sigmoid_single(self.Z[L][cur][m])
+                if self.binary_classification == True or self.multiclass_classification == True:
+                    self.A[L][cur][m] = self.sigmoid_single(self.Z[L][cur][m])
+                if self.regression == True:   
+                    self.A[L][cur][m] = self.Z[L][cur][m]
 
 
         # DECIDE PREDICTIONS
@@ -295,15 +298,12 @@ class FeedForwardNeuralNetwork:
             for m in range(self.m):
                 y = self.Y[n][m]
                 al = AL[m][n]
-
                 if self.l2_regularization:
                     reg_term = self.lambd / 2 * self.square_sum(self.W[L], L)
                     example_cost += -y * math.log(al) + reg_term
                 else:
                     example_cost += -y * math.log(al)
-
             total_cost += example_cost / self.m
-
         self.cost = total_cost / self.m  # Average over all examples
 
     def compute_cost_MSE(self):  # MEAN-SQUARED-ERROR: cost function for regression
@@ -357,8 +357,8 @@ class FeedForwardNeuralNetwork:
             for cur in range(self.dimensions[l]):
                 self.db[l].append(0)
 
-        for cur in range(self.dimensions[L]):
-            for m in range(self.m):
+        for m in range(self.m):
+            for cur in range(self.dimensions[L]):
                 y = self.Y[cur][m]
                 al = self.A[L][cur][m]
                 self.dA[L][cur][m] = -((y / al) - ((1 - y) / (1 - al)))
@@ -370,9 +370,9 @@ class FeedForwardNeuralNetwork:
         for m in range(self.m):
             for prev in range(self.dimensions[L-1]):
                 for cur in range(self.dimensions[L]):
-                    self.dW[L][prev][cur] += self.dZ[L][cur][m] * self.A[L-1][cur][m]
+                    self.dW[L][prev][cur] += self.dZ[L][cur][m] * self.A[L-1][prev][m]
                     self.db[L][cur] += self.dZ[L][cur][m]
-                self.dA[L-1][cur][m] += self.W[L][prev][cur] * self.dZ[L][cur][m]
+                self.dA[L-1][prev][m] += self.W[L][prev][cur] * self.dZ[L][cur][m]
 
         # REST OF THE LAYERS:
         for l in range(len(self.dimensions)-2, 0, -1):
@@ -382,19 +382,16 @@ class FeedForwardNeuralNetwork:
             for m in range(self.m):
                 for prev in range(self.dimensions[l-1]):
                     for cur in range(self.dimensions[l]):
-                        print(l-1, cur, m)
-                        print(self.A[l-1][cur][m])
-                        self.dW[l][prev][cur] += self.dZ[l][cur][m] * self.A[l-1][cur][m]
+                        self.dW[l][prev][cur] += self.dZ[l][cur][m] * self.A[l-1][prev][m]
                         self.db[l][cur] += self.dZ[l][cur][m]
-                    self.dA[l-1][cur][m] += self.W[l][prev][cur] * self.dZ[l][cur][m]
+                    self.dA[l-1][prev][m] += self.W[l][prev][cur] * self.dZ[l][cur][m]
 
-        # After the nested loops, divide the accumulated gradients by the number of examples (self.m)
+        # AVERAGE GRADIENTS
         for l in range(len(self.dimensions) - 1, 0, -1):
-            for n in range(self.dimensions[l]):
-                # Divide each element in dW and db by the number of examples (self.m)
+            for cur in range(self.dimensions[l]):
                 for prev_node in range(self.dimensions[l - 1]):
-                    self.dW[l][prev_node][n] /= self.m
-                self.db[l][n] /= self.m
+                    self.dW[l][prev_node][cur] /= self.m
+                self.db[l][cur] /= self.m
 
     def update_parameters_gradient_descent(self):
         for l in range(1, len(self.dimensions)):
@@ -409,7 +406,7 @@ class FeedForwardNeuralNetwork:
         #self.learning_rate = 1/(1+self.decay_rate*self.epoch_num) * self.learning_rate0  # decay update at each iteration
         self.learning_rate = self.learning_rate0 / (1+self.decay_rate * math.floor(self.epoch_num/self.time_interval)) # schedule learing_rate in time intervals
                 
-    def predict(self, x, y, show_preds=False): 
+    def predict(self, x, y=[], show_preds=False): 
         new_x = x
         new_y = y
         self.m = 0
@@ -517,7 +514,10 @@ class FeedForwardNeuralNetwork:
         self.print_info()
         for i in range(self.num_iterations):
             self.forward_propagation()
-            self.compute_cost()
+            if self.binary_classification == True or self.multiclass_classification == True:
+                self.compute_cost()
+            if self.regression == True:
+                self.compute_cost_MSE()
             self.backward_propagation()   # DISABLE BACKPROP TO PRINT GRADIENTS
             self.update_parameters_gradient_descent()
 
@@ -550,7 +550,7 @@ train_y = [
 
 
 if __name__ == "__main__":
-    nn = FeedForwardNeuralNetwork(train_x, train_y, layers_dims, 0.0075, 500, l2_regularization=False, binary_classification=True, multiclass_classification=False, optimizer="gradient descent", learning_rate_decay=False, gradient_descent_variant="batch")
+    nn = FeedForwardNeuralNetwork(train_x, train_y, layers_dims, 0.0075, 2500, binary_classification=True, multiclass_classification=False, optimizer="gradient descent", learning_rate_decay=False, gradient_descent_variant="batch")
     nn.train()
     """for l in range(1, len(nn.dimensions)):
         print("LAYER: " + str(l))
@@ -584,13 +584,12 @@ if __name__ == "__main__":
 # Cost decreasing for always for constat weight initialzation.
 
 # NOTE:
-# - backprop is disabled for 1 iteration. 
 # - forward_prop calculations are matching paper calculations
+# - cost decreasing to 0.63 for 3-examples.
+# - majority of cost is constant for 
+# - sine surve predictions are all the same
 
 # TODO:
 # 1) compute on network on paper with constant weights and print network compuataions and compare
 # 2) Relu activation: max yields constant cost returning 0/1 yields decreasing cost.
 # 3) Constant cost with 100 examples.
-# 4) ile "/Users/pravachanpatra/Documents/PYTHON/AI:ML:DL/FeedForwardNeuralNetwork/ScratchNetworks/NN.py", line 385, in backward_propagation
-#    self.dW[l][prev][cur] += self.dZ[l][cur][m] * self.A[l-1][cur][m]
-#IndexError: list index out of range

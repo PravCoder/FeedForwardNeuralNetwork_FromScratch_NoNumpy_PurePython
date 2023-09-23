@@ -27,7 +27,7 @@ def main():
     x, y = proccess_data()
     train_x = (x - np.mean(x)) / np.std(x)
     train_y = y
-    nn = FeedForwardNeuralNetwork(train_x, train_y,   layers_dims, 0.001, 2500, regression=True)
+    nn = FeedForwardNeuralNetwork(train_x, train_y,   layers_dims, 0.001, 20000, regression=True)
     nn.train()
 
     inputs = [] # stores each input to function in 1D-list
