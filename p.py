@@ -64,7 +64,7 @@ def calculate_distance(ball, paddle):
 # ballY paddleY ballXvel ballYvel distance
 def main():
     layers_dims = [3, 5, 2] # try different DIMENSIONS, AND ADD MORE DATA
-    paddle_nn = FeedForwardNeuralNetwork(train_x, train_y, layers_dims, 0.0075, 100, l2_regularization=False, binary_classification=False, multiclass_classification=True, regression=False, optimizer="gradient descent", learning_rate_decay=False, gradient_descent_variant="batch")
+    paddle_nn = FeedForwardNeuralNetwork(train_x, train_y, layers_dims, 0.0075, 2500, binary_classification=False, multiclass_classification=True, regression=False, optimizer="gradient descent", learning_rate_decay=False, gradient_descent_variant="batch")
     paddle_nn.train()  # dont train when collecting data
 
     paddle1 = Paddle(10, 150, WIDTH, HEIGHT, "L", 5, BLACK, "neural_network")

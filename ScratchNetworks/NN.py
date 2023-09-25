@@ -29,41 +29,11 @@ class FeedForwardNeuralNetwork:
         self.A = []     # [a-layer-0,a-layer-1,...,a-layer-L] each element is a list representing the activations for each layer, a-layer-1 = [a1(m1),a1(m2),...,a1(m)] each element is a list representing the activations for current-layer and that example, a1(m1) = = [a1,a2,a3,...,a(n[l])] each element is the activations value for current layer and that example
         self.dZ = []        # same representation/shape as self.Z
         self.dA = []        # same representation/shape as self.A
-        # GRADIENT CHECKING:
-        self.theta_plus = []        # copy of self.W but each individual weight-value for each layer is incremented by the epsilon value
-        self.theta_minus = []       # copy of self.W but each individual weight-value for each layer is decremented by the epsilon value
         self.epsilon = 1e-8         # constant value used to approxmiat ethe derivative of cost function weith respect to each individual parameter
-        # L2-REGULARIZATION:
-        self.lambd = 0      # hyperparameter that dictates the strength of regularization term in cost-function and gradient calculations
-        self.l2_regularization = l2_regularization      # boolean value that tells if l2-reg should be implmented in training proccess
-        # OPTIMIZATION METHODS:
-        self.optimizer = optimizer  # gradient-descent, adam, momentum
-        self.vdw = []
-        self.vdb = []
-        self.beta1 = 0.9
-        self.sdw = []
-        self.sdb = []
-        self.beta2 = 0.999
-        self.epoch_num = 1
-        # GRADIENT DESCENT VARIATIONS:
-        self.gradient_descent_variant = gradient_descent_variant  # batch, stochastic, mini-batch
-        self.mini_batch_size = 1
-        self.num_mini_batches = None
-        self.x_mini_batches = []  # stores x-mini-batch data, each element is in the form of a small dataset or mini-batch
-        self.y_mini_batches = []
-        self.examples_saved = self.m  # saves the total number of examples in dataset, not in mini-batches
-        # LEARNING RATE METHODS:
-        self.learning_rate_decay = learning_rate_decay  # true if using scheduled learning rate decay
-        self.learning_rate0 = self.learning_rate   # inital learning rate at first iteration
-        self.decay_rate = 0.3
-        self.time_interval = 100
         # REGRESSION TASKS:
         self.accurate_threshold = 0.05  # determines if a prediction is within the range of a correct prediction for regression tasks
         self.accuracy_method = "MAE" # 'MAE' or 'tolerence' are 2 different ways to evaluating accuracy of a regression-model
-        # BATCH NORMALIZATION:
-        self.z_norm = []
-        self.z_tilda = []
-        self.gamma = []
+
     
     def check_gradients(self):
         print("------")
@@ -192,19 +162,6 @@ class FeedForwardNeuralNetwork:
         #self.show_shapes(self.dA, "dA")
 
 
-    def sigmoid(self, z):       # given z-values for certain layer in 1D-list computes the sigmoid formula on each value and returns activated list
-        for i, val in enumerate(z):
-            z[i] = 1/(1+np.exp(-val))
-        return z
-    def relu(self, z):      # given z-values for certain layer in 1D-list computes the relu formula on each value and returns activated list
-        for i, val in enumerate(z):
-            if val > 0:
-                z[i] = val
-            else:
-                z[i] = 0
-        return z
-
-
     def forward_propagation(self, predict=False, show_predictions=False, acutal_y=None):        # computes the weighted sum and activations for each node in network
         for m in range(self.m):
             for cur in range(self.dimensions[0]):
@@ -288,24 +245,6 @@ class FeedForwardNeuralNetwork:
             total_cost += example_cost      # average the example cost and add it to total-cost
         self.cost = -total_cost / self.m
 
-    def compute_cost_categorical(self):
-        L = len(self.dimensions) - 1
-        AL = self.A[L]
-        total_cost = 0
-
-        for n in range(self.dimensions[L]):
-            example_cost = 0
-            for m in range(self.m):
-                y = self.Y[n][m]
-                al = AL[m][n]
-                if self.l2_regularization:
-                    reg_term = self.lambd / 2 * self.square_sum(self.W[L], L)
-                    example_cost += -y * math.log(al) + reg_term
-                else:
-                    example_cost += -y * math.log(al)
-            total_cost += example_cost / self.m
-        self.cost = total_cost / self.m  # Average over all examples
-
     def compute_cost_MSE(self):  # MEAN-SQUARED-ERROR: cost function for regression
         L = len(self.dimensions)-1      
         AL = self.A[L]      
@@ -317,14 +256,9 @@ class FeedForwardNeuralNetwork:
                 total_cost += math.pow(al - y, 2)
         self.cost = total_cost / self.m
 
-
-
     def sigmoid_single(self, x):
         return  1/(1+math.exp(-x))
-    def sigmoid_backward(self, z):
-        for i, val in enumerate(z):
-            z[i] = self.sigmoid_single(val) * (1-self.sigmoid_single(val))
-        return z
+
     def sigmoid_backward_single(self, z):
         return self.sigmoid_single(z) * (1-self.sigmoid_single(z))
     def relu_single(self, x):  # TODO: fix relu formula? MAX or return 1/0??????
@@ -332,15 +266,6 @@ class FeedForwardNeuralNetwork:
             return 1
         else:
             return 0
-        #return max(0, x) 
-    def relu_backward(self, z):
-        for i, val in enumerate(z):
-            if z[i] > 0:
-                z[i] = 1
-            else:
-                z[i] = 0
-        return z
-
 
     def backward_propagation(self):
         L = len(self.dimensions) - 1        # get index of last-layer
@@ -497,14 +422,7 @@ class FeedForwardNeuralNetwork:
             print("Cost Function: Mean-Squared-Error " + self.accuracy_method)
         if self.regression == False:
             print("Cost Function: Cross-Entropy")
-        print("Gradient Descent Varient: " + self.gradient_descent_variant)
 
-        algorithms = [self.optimizer]
-        if self.l2_regularization == True:
-            algorithms.append("L2-Regularization")
-        if self.learning_rate == True:
-            algorithms.append("Learning Rate Decay")
-        print("Algorithms: " + ", ".join(algorithms))
         print("-----------------------")
     def train(self):
         self.get_input_info()
@@ -524,20 +442,19 @@ class FeedForwardNeuralNetwork:
             if i % 100 == 0 or i == self.num_iterations - 1:
                 print('Cost after {} iterations is {}'.format(i, self.cost))
                 self.costs.append(self.cost)
-            self.epoch_num += 1
 
 # STATUS: Increasing cost for single/multiple output neurons possible due to incorrect backprop implementation and cost function.
-layers_dims = [1, 2, 1]  # num of neurons of each layer
+layers_dims = [4, 2, 1]  # num of neurons of each layer
 
 # each row represents inputs for each input node, each element in a row are all the example input values for that input node. To get all of the inputs for a specific example use that same index in each row
-train_x = [
+"""train_x = [
     [0.1, 0.2, 0.3],
 ]
 # each row represents outputs for each output node, each element in a row are all the example output values for that output node. To get all of the outputs for a specific example use that same index in each row
 train_y = [
     [0, 1, 0],
-]
-"""train_x = [
+]"""
+train_x = [
     [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.9, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0, 1.5, 0.5, 0.1, 0.2, 0.12, 2.3, 0.49, 2.34, 1.12, 1.26, 1.47, 0.69, 0.96, 2.4, 4.5, 6.8, 8.9, 0.2, 9.9, 8.8, 6.4, 5.9, 3.9, 2.9, 9.4, 8.3, 3.6, 9.7, 4.0, 2.6, 2.5, 6.7, 6.5, 6.6, 6.2, 5.0, 2.4, 6.1, 5.3, 3.2, 3.1, 2.1, 8.1, 8.4, 8.5, 9.1, 9.6, 6.6, 1.1, 7.5, 7.1, 7.4, 8.6, 6.8, 2.7, 7.2, 9.6, 5.4, 9.7, 3.5, 2.1, 7.7, 8.8, 4.0, 3.9, 8.5, 7.0, 1.0, 3.0, 4.0, 8.0, 9.0, 9.2, 9.4, 4.4, 3.3, 1.1, 2.2, 8.8, 7.6, 6.8],
     [0.09, 0.19, 0.28, 0.37, 0.51, 0.64, 0.75, 0.83, 1.05, 1.12, 1.24, 1.33, 1.44, 1.52, 1.66, 1.73, 1.82, 1.96, 2.01, 1.52, 0.52, 0.08, 0.19, 0.11, 2.27, 0.47, 2.31, 1.16, 1.29, 1.37, 0.60, 0.91, 2.26, 4.43, 6.65, 8.81, 0.18, 9.74, 8.72, 6.29, 5.86, 3.81, 2.85, 9.41, 8.23, 3.58, 9.68, 3.95, 2.51, 2.49, 6.61, 6.46, 6.60, 6.07, 4.94, 2.32, 6.03, 5.31, 3.11, 3.09, 1.97, 8.06, 8.38, 8.40, 9.04, 9.53, 6.46, 1.02, 7.47, 7.00, 7.42, 8.47, 6.72, 2.68, 7.16, 9.57, 5.47, 9.78, 3.44, 1.99, 7.70, 8.82, 3.95, 3.88, 8.40, 7.09, 0.98, 2.90, 3.95, 8.06, 8.98, 9.19, 9.48, 4.35, 3.23, 1.00, 2.15, 8.68, 7.48, 6.64],
     [0.12, 0.21, 0.35, 0.42, 0.54, 0.61, 0.78, 0.85, 1.02, 1.14, 1.28, 1.30, 1.42, 1.59, 1.68, 1.78, 1.85, 1.92, 2.06, 1.45, 0.46, 0.13, 0.26, 0.18, 2.32, 0.55, 2.39, 1.18, 1.23, 1.42, 0.67, 0.87, 2.44, 4.59, 6.70, 8.94, 0.27, 9.89, 8.77, 6.47, 5.91, 3.92, 2.88, 9.49, 8.32, 3.64, 9.78, 4.12, 2.68, 2.58, 6.72, 6.51, 6.68, 6.18, 4.96, 2.42, 6.12, 5.33, 3.24, 3.18, 2.08, 8.19, 8.45, 8.57, 9.10, 9.63, 6.73, 1.12, 7.53, 7.16, 7.54, 8.63, 6.86, 2.78, 7.26, 9.69, 5.65, 9.89, 3.65, 2.16, 7.77, 8.91, 4.18, 3.98, 8.60, 7.05, 1.10, 3.12, 4.16, 8.16, 9.03, 9.25, 9.58, 4.47, 3.38, 1.16, 2.23, 8.88, 7.68, 6.81],
@@ -546,7 +463,7 @@ train_y = [
 # each row represents outputs for each output node, each element in a row are all the example output values for that output node. To get all of the outputs for a specific example use that same index in each row
 train_y = [
     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1],
-]"""
+]
 
 
 if __name__ == "__main__":
