@@ -353,13 +353,13 @@ class FeedForwardNeuralNetwork:
             return predictions
 
 
-    def compute_cost(self):     # CROSS-ENTROPY
+    def compute_cost(self):             # CROSS-ENTROPY
         L = len(self.dimensions)-1      # get index of last-layer
         AL = self.A[L]      
-        total_cost = 0
+        total_cost = 0              
         for n in range(self.dimensions[L]):     # iterate each node index in last-layer
             example_cost = 0
-            for m in range(self.m):     # iterate throughe each example index
+            for m in range(self.m):     # iterate through each example index
                 y = self.Y[n][m]        # get the actual label of current ouput-node and current example
                 al = AL[m][n]           # get the activation of current example and current output-node of last-layer
                 if self.l2_regularization == True:
@@ -439,9 +439,7 @@ class FeedForwardNeuralNetwork:
         for i, val in enumerate(z):
             z[i] = self.sigmoid_single(val) * (1-self.sigmoid_single(val))
         return z
-    
- 
-    def relu_single(self, x): # TODO: whcih relu version activation to use?
+    def relu_single(self, x): # TODO: which relu version activation to use?
         """if x > 0:
             return 1
         else:

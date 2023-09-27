@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt     # used to visualize the cost
 import copy     # used as 2nd check so that the data of a object is copied and not its reference
 
 class FeedForwardNeuralNetwork:
-    def __init__(self, X, Y, dimensions, learning_rate=0.0075, num_iterations=3000, l2_regularization=False, binary_classification=False, multiclass_classification=False, regression=False, optimizer="gradient descent", learning_rate_decay=False, gradient_descent_variant="batch"):
+    def __init__(self, X, Y, dimensions, learning_rate=0.0075, num_iterations=3000, binary_classification=False, multiclass_classification=False, regression=False, optimizer="gradient descent", learning_rate_decay=False, gradient_descent_variant="batch"):
         self.X = X      # x-training data
         self.Y = Y      # y-training data
         self.saved_X = self.X
@@ -33,58 +33,6 @@ class FeedForwardNeuralNetwork:
         # REGRESSION TASKS:
         self.accurate_threshold = 0.05  # determines if a prediction is within the range of a correct prediction for regression tasks
         self.accuracy_method = "MAE" # 'MAE' or 'tolerence' are 2 different ways to evaluating accuracy of a regression-model
-
-    
-    def check_gradients(self):
-        print("------")
-        self.theta_plus = copy.deepcopy(self.W)
-        self.theta_minus = copy.deepcopy(self.W)
-
-        for l in range(1, len(self.dimensions)):
-            for prev in range(self.dimensions[l-1]):
-                for n in range(self.dimensions[l]):
-                    self.theta_plus[l][prev][n] += self.epsilon
-                    self.theta_minus[l][prev][n] -= self.epsilon
-        print("Thetas Equal: "+str(self.theta_minus == self.theta_plus))
-        J_plus = copy.deepcopy(self.W)
-        J_minus = copy.deepcopy(self.W)
-
-        graddpprox = copy.deepcopy(self.W)
-        for l in range(1, len(self.dimensions)):
-            for prev in range(self.dimensions[l-1]):
-                for n in range(self.dimensions[l]):
-                    self.W = copy.deepcopy(self.theta_plus)
-                    self.forward_propagation()
-                    self.compute_cost()
-                    J_plus[l][prev][n] = self.cost
-                    #print("+: " + str(J_plus[l][z]))
-                    #print(self.W == self.theta_plus)
-                    
-                    self.W = copy.deepcopy(self.theta_minus)
-                    self.forward_propagation()
-                    self.compute_cost()
-                    J_minus[l][prev][n] = self.cost
-                    #print("-: " + str(J_minus[l][z]))
-                    #print(self.W == self.theta_minus)
-
-                    graddpprox[l][prev][n] = (J_plus[l][prev][n] - J_minus[l][prev][n]) / (2*self.epsilon)
-                    #print("g: "+str(graddpprox[l][z]))
-                    #print("-------")
-        
-        grad = self.gradients_to_vector(self.dW)
-        graddpprox = self.gradients_to_vector(graddpprox)
-        print("grads-len: " + str(len(grad) == len(graddpprox)))
-        numerator = self.l2_norm(self.subtract_vector(grad, graddpprox))
-        denominator = self.l2_norm(grad) + self.l2_norm(graddpprox) 
-        print("num: " + str(numerator))
-        print("den: " + str(denominator))
-
-        difference = numerator/denominator
-
-        if difference > 1e-7:
-            print("Gradient Checking.....Incorrect backpropagation. Difference: " + str(difference))
-        else:
-            print("Gradient Checking.....Correct backpropagation! Difference: " + str(difference))
 
     def get_input_info(self):
         #print("X: "+str(self.X))
@@ -207,7 +155,7 @@ class FeedForwardNeuralNetwork:
         # MULTICLASS-CLASSIFICATION PREDICTIONS
         if predict == True and self.multiclass_classification == True:    
             for n in range(self.dimensions[L]):     # iterate each output-node-index
-                y_hat = self.A[L][0][n]     # activation of last-layer and 0 for 1 example because we are predicting 1 example and the index of current-output-node-n
+                y_hat = self.A[L][n][0]     # activation of last-layer and 0 for 1 example because we are predicting 1 example and the index of current-output-node-n
                 prediction = y_hat
                 predictions.append(prediction)
             pred_i = predictions.index(max(predictions))
@@ -234,15 +182,13 @@ class FeedForwardNeuralNetwork:
         L = len(self.dimensions)-1      # get index of last-layer
         AL = self.A[L]      
         total_cost = 0
-
-        for m in range(self.m):     # iterate each node index in last-layer
-            example_cost = 0
-            for cur in range(self.dimensions[L]):     # iterate throughe each example index
+        for cur in range(self.dimensions[L]):     # iterate throughe each example index
+            for m in range(self.m):     # iterate each node index in last-layer
+                example_cost = 0
                 y = self.Y[cur][m]        # get the actual label of current ouput-node and current example
                 al = AL[cur][m]           # get the activation of current example and current output-node of last-layer
                 example_cost += y * np.log(al) + (1 - y) * np.log(1 - al)
-
-            total_cost += example_cost      # average the example cost and add it to total-cost
+                total_cost += example_cost      # average the example cost and add it to total-cost
         self.cost = -total_cost / self.m
 
     def compute_cost_MSE(self):  # MEAN-SQUARED-ERROR: cost function for regression
@@ -266,6 +212,11 @@ class FeedForwardNeuralNetwork:
             return 1
         else:
             return 0
+    def relu_backward_single(self, z):
+        if z > 0:
+            return 1.0  # Derivative of ReLU when z > 0 is 1
+        else:
+            return 0.0  # Derivative of ReLU when z <= 0 is 0
 
     def backward_propagation(self):
         L = len(self.dimensions) - 1        # get index of last-layer
@@ -292,9 +243,10 @@ class FeedForwardNeuralNetwork:
         for cur in range(self.dimensions[L]):
             for m in range(self.m):
                 self.dZ[L][cur][m] = self.dA[L][cur][m] * self.sigmoid_backward_single(self.Z[L][cur][m])
-        for m in range(self.m):
-            for prev in range(self.dimensions[L-1]):
-                for cur in range(self.dimensions[L]):
+        
+        for prev in range(self.dimensions[L-1]):
+            for cur in range(self.dimensions[L]):
+                for m in range(self.m):
                     self.dW[L][prev][cur] += self.dZ[L][cur][m] * self.A[L-1][prev][m]
                     self.db[L][cur] += self.dZ[L][cur][m]
                 self.dA[L-1][prev][m] += self.W[L][prev][cur] * self.dZ[L][cur][m]
@@ -303,10 +255,11 @@ class FeedForwardNeuralNetwork:
         for l in range(len(self.dimensions)-2, 0, -1):
             for cur in range(self.dimensions[l]):
                 for m in range(self.m):
-                    self.dZ[l][cur][m] = self.dA[l][cur][m] * self.sigmoid_backward_single(self.Z[l][cur][m])
-            for m in range(self.m):
-                for prev in range(self.dimensions[l-1]):
-                    for cur in range(self.dimensions[l]):
+                    self.dZ[l][cur][m] = self.dA[l][cur][m] * self.relu_backward_single(self.Z[l][cur][m])
+            
+            for prev in range(self.dimensions[l-1]):
+                for cur in range(self.dimensions[l]):
+                    for m in range(self.m):
                         self.dW[l][prev][cur] += self.dZ[l][cur][m] * self.A[l-1][prev][m]
                         self.db[l][cur] += self.dZ[l][cur][m]
                     self.dA[l-1][prev][m] += self.W[l][prev][cur] * self.dZ[l][cur][m]
@@ -322,14 +275,8 @@ class FeedForwardNeuralNetwork:
         for l in range(1, len(self.dimensions)):
             for cur in range(self.dimensions[l]):
                 for prev in range(self.dimensions[l-1]):
-                    self.W[l][prev][cur] = self.W[l][prev][cur] - self.learning_rate * self.dW[l][prev][cur]
-                self.b[l][cur] = self.b[l][cur] - self.learning_rate * self.b[l][cur]
-
-
-
-    def update_learning_rate(self):
-        #self.learning_rate = 1/(1+self.decay_rate*self.epoch_num) * self.learning_rate0  # decay update at each iteration
-        self.learning_rate = self.learning_rate0 / (1+self.decay_rate * math.floor(self.epoch_num/self.time_interval)) # schedule learing_rate in time intervals
+                    self.W[l][prev][cur] = self.W[l][prev][cur] - (self.learning_rate * self.dW[l][prev][cur])
+                self.b[l][cur] = self.b[l][cur] - (self.learning_rate * self.b[l][cur])
                 
     def predict(self, x, y=[], show_preds=False): 
         new_x = x
@@ -467,7 +414,7 @@ train_y = [
 
 
 if __name__ == "__main__":
-    nn = FeedForwardNeuralNetwork(train_x, train_y, layers_dims, 0.0075, 2500, binary_classification=True, multiclass_classification=False, optimizer="gradient descent", learning_rate_decay=False, gradient_descent_variant="batch")
+    nn = FeedForwardNeuralNetwork(train_x, train_y, layers_dims, 0.0075, 2500, binary_classification=True)
     nn.train()
     """for l in range(1, len(nn.dimensions)):
         print("LAYER: " + str(l))
@@ -505,6 +452,7 @@ if __name__ == "__main__":
 # - cost decreasing to 0.63 for 3-examples.
 # - majority of cost is constant for 
 # - sine surve predictions are all the same
+# - cost decreasing more times, sometimes constant.
 
 # TODO:
 # 1) compute on network on paper with constant weights and print network compuataions and compare
