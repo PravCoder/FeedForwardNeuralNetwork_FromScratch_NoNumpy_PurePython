@@ -28,14 +28,13 @@ class FeedForwardNeuralNetwork:
         self.Z = []     # [z-layer-0,z-layer-1,...,z-layer-L] each element is a list representing the weighted-sums for each layer, z-layer-1 = [z1(m1),z1(m2),...,z1(m)] each element is a list representing the weighted-sums for current-layer and that example, z1(m1) = = [z1,z2,z3,...,z(n[l])] each element is the weighted-sum value for current layer and that example
         self.A = []     # [a-layer-0,a-layer-1,...,a-layer-L] each element is a list representing the activations for each layer, a-layer-1 = [a1(m1),a1(m2),...,a1(m)] each element is a list representing the activations for current-layer and that example, a1(m1) = = [a1,a2,a3,...,a(n[l])] each element is the activations value for current layer and that example
         self.dZ = []        # same representation/shape as self.Z
-        self.dA = []        # same representation/shape as self.A
+        self.dA = []        # same representation/shape as self.As
         self.epsilon = 1e-8         # constant value used to approxmiat ethe derivative of cost function weith respect to each individual parameter
         # REGRESSION TASKS:
         self.accurate_threshold = 0.05  # determines if a prediction is within the range of a correct prediction for regression tasks
         self.accuracy_method = "MAE" # 'MAE' or 'tolerence' are 2 different ways to evaluating accuracy of a regression-model
 
     def get_input_info(self):
-        #print("X: "+str(self.X))
         for row in self.X:
             for _ in row:
                 self.m += 1
@@ -53,23 +52,21 @@ class FeedForwardNeuralNetwork:
             print(string + "" + str(i) + ": " + str(np.array(layer).shape))
             return
 
-    def initialize_parameters(self):        # creates inital representation of the parameters           
-        for _ in range(0, len(self.dimensions)):        # iterate through each layer and add empty list to W/b
+    def initialize_parameters(self):          
+        for _ in range(0, len(self.dimensions)):     
             self.W.append([])
             self.b.append([])
-        for l in range(1, len(self.dimensions)):        # iterate from 1st layer to last layer index
-            for prev in range(self.dimensions[l-1]):        # iterate all indicies of each node in previous layer and add empty list to W
+        for l in range(1, len(self.dimensions)):      
+            for prev in range(self.dimensions[l-1]):  
                 self.W[l].append([])
-                for next in range(self.dimensions[l]):      # iterate all indicies of each node in current layer and use prev-node-index to add a initial weight value for that prev-node in current layer to W[l][prev]. Number of weights in a layer is n[l]*n[l-1] so using nested loop
+                for next in range(self.dimensions[l]):    
                     # float(np.random.randn() *0.01))
                     self.W[l][prev].append(np.random.randn() *0.01) # UNCOMMENT THIS! 0.018230189162016477
-                    #self.W[l][prev].append(0)  # zero weight initlization COMMENT THIS!
-            for _ in range(self.dimensions[l]):      # iterate each node index in current layer and add 0 for bias for current layer, there is a seperate bias for each node in each layer
+            for _ in range(self.dimensions[l]):     
                 self.b[l].append(0)
-        #self.show_shapes(self.W, "W")
-        #self.show_shapes(self.b, "b")
 
-    def initialize_calculations(self):      # creates initial representation of the activations/weighted-sums
+
+    def initialize_calculations(self):   
         for _ in range(0, len(self.dimensions)):        # iterate through each layer index and add empty list to Z/A
             self.Z.append([])
             self.A.append([])
@@ -81,16 +78,15 @@ class FeedForwardNeuralNetwork:
                    self.Z[l][c].append(0)
                    self.A[l][c].append(0)
 
-    def initialize_gradients(self):     # create inital representation of gradients of parameters as same as the parameters
-        for _ in range(0, len(self.dimensions)):        # iterate through each layer and add empty list to W/b
+    def initialize_gradients(self):    
+        for _ in range(0, len(self.dimensions)):      
             self.dW.append([])
             self.db.append([])
-        for l in range(1, len(self.dimensions)):        # iterate from 1st layer to last layer index
+        for l in range(1, len(self.dimensions)):      
             for prev in range(self.dimensions[l-1]):        # iterate all indicies of each node in previous layer and add empty list to W
                 self.dW[l].append([])
                 for next in range(self.dimensions[l]):      # iterate all indicies of each node in current layer and use prev-node-index to add a initial weight value for that prev-node in current layer to W[l][prev]. Number of weights in a layer is n[l]*n[l-1] so using nested loop
                     self.dW[l][prev].append(0) # UNCOMMENT THIS!
-                    #self.W[l][prev].append(0)  # zero weight initlization COMMENT THIS!
             for _ in range(self.dimensions[l]):      # iterate each node index in current layer and add 0 for bias for current layer, there is a seperate bias for each node in each layer
                 self.db[l].append(0)
 
@@ -109,7 +105,6 @@ class FeedForwardNeuralNetwork:
         #self.show_shapes(self.dZ, "dZ")
         #self.show_shapes(self.dA, "dA")
 
-
     def forward_propagation(self, predict=False, show_predictions=False, acutal_y=None):        # computes the weighted sum and activations for each node in network
         for m in range(self.m):
             for cur in range(self.dimensions[0]):
@@ -119,17 +114,18 @@ class FeedForwardNeuralNetwork:
                 for cur in range(self.dimensions[l]):
                     self.Z[l][cur][m] = 0
                     for prev in range(self.dimensions[l - 1]):
-                        self.Z[l][cur][m] += self.W[l][prev][cur] * self.A[l - 1][prev][m] + self.b[l][cur]
+                        self.Z[l][cur][m] += self.W[l][prev][cur] * self.A[l - 1][prev][m] 
+                    self.Z[l][cur][m] += + self.b[l][cur]
                     self.A[l][cur][m] = self.relu_single(self.Z[l][cur][m])
         L = len(self.dimensions) - 1
         for m in range(self.m):
             for cur in range(self.dimensions[L]):
-                self.Z[L][cur][m] = 0
                 for prev in range(self.dimensions[L - 1]):
-                    self.Z[L][cur][m] += self.W[L][prev][cur] * self.A[L - 1][prev][m] + self.b[L][cur]
+                    self.Z[L][cur][m] += self.W[L][prev][cur] * self.A[L - 1][prev][m] 
+                self.Z[L][cur][m] += self.b[L][cur]
                 if self.binary_classification == True or self.multiclass_classification == True:
                     self.A[L][cur][m] = self.sigmoid_single(self.Z[L][cur][m])
-                if self.regression == True:   
+                if self.regression == True:   # linear-activation for regression
                     self.A[L][cur][m] = self.Z[L][cur][m]
 
 

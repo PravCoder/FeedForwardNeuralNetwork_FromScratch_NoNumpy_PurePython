@@ -5,12 +5,12 @@ from FNN import *
 
 
 def func(x):
-    return math.sin(x)   # for different function
-def proccess_data():
+    return math.sin(x) # for different function
+def proccess_data(points):
     train_x = [[]]
     train_y = [[]]
     x = 0
-    while x < 5000:
+    while x < points:
         input_val = x/100
         train_x[0].append(input_val)
         train_y[0].append(func(input_val))
@@ -24,10 +24,10 @@ def proccess_data():
 
 def main():
     layers_dims = [1, 1]
-    x, y = proccess_data()
-    train_x = (x - np.mean(x)) / np.std(x)
+    x, y = proccess_data(5000)
+    train_x = x
     train_y = y
-    nn = FeedForwardNeuralNetwork(train_x, train_y,   layers_dims, 0.001, 20000, regression=True)
+    nn = FeedForwardNeuralNetwork(train_x, train_y, layers_dims, 0.001, 500, regression=True)
     nn.train()
 
     inputs = [] # stores each input to function in 1D-list
@@ -47,8 +47,8 @@ def main():
     #print(len(inputs) == len(network_preedictions))
     plt.plot(inputs, labels, color="red")   # Sine curve
     plt.plot(inputs, network_preedictions, color="blue")    # network fit
-    plt.xlim(-1.0, 1.2)
-    plt.ylim(-1.0, 2.0)
+    plt.xlim(-1.8, -0.7)
+    plt.ylim(0, 200)
     plt.show()
 
 main()
