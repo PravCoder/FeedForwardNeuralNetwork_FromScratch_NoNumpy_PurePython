@@ -21,13 +21,13 @@ def reformat_data(x, y):
 
 def main():
     layers_dims = [1, 10,10, 1]
-    X, Y = generate_sine_data(num_samples=500, noise_factor=0.1)
+    X, Y = generate_sine_data(num_samples=1000, noise_factor=0.1)
     # Extract x values from X and y values from Y for plotting
     x_values = [x[0] for x in X]
     y_values = [y[0] for y in Y]
     train_x, train_y = reformat_data(x_values, y_values)
 
-    nn = FeedForwardNeuralNetwork(train_x, train_y,   layers_dims, 0.01, 5000, regression=True)
+    nn = FeedForwardNeuralNetwork(train_x, train_y,   layers_dims, 0.01, 100, regression=True)
     nn.train()
 
     predictions = []
