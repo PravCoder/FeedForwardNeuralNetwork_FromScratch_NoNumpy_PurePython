@@ -108,63 +108,70 @@ class Value:
 
 class Neuron:
 
-  def __init__(self, n_inputs): # Neuron(number of inputs to node, )
-    # weights = tuple(), for every input-node create a value-weight-obj with ranomd initalized value, same for bias of this neuron
-    self.w = (Value(random.uniform(-1,1)) for _ in range(n_inputs))
-    self.b = Value(random.uniform(-1, 1))
-    self.n_inputs = n_inputs
+  def __init__(self, n_inputs): # Neuron(number of inputs to flowing into the node)
+      # weights = tuple(), for every input-node create a value-weight-obj with ranomd initalized value, same for bias of this neuron
+      self.w = tuple(Value(random.uniform(-1,1)) for _ in range(n_inputs))
+      self.b = Value(random.uniform(-1, 1))
+      self.n_inputs = n_inputs
 
   def __call__(self, x): # given input-x-arr computes w*x +b, this is called by doing n=Neuron(2) n([2.0, 3.0])
-    # print(list(zip(self.w, x))) # zip of w/x pairs each elements in w with each input in x
-    act = sum(wi * xi for wi, xi in zip(self.w, x)) + self.b
-    act = act.tanh()
-    return act 
-    # weighted_sum = 0
-    # for wi, xi in list(zip(self.w, x)):
-    #     weighted_sum += (wi * xi)
-    # weighted_sum += self.b
-    # activation = weighted_sum.tanh()
-    # return activation
+      # print(list(zip(self.w, x))) # zip of w/x pairs each elements in w with each input in x
+      act = sum(wi * xi for wi, xi in zip(self.w, x)) + self.b
+      act = act.tanh()  # these vairables are Value-obj so call tanh() activation on weighted-sum
+      return act 
+      # weighted_sum = 0
+      # for wi, xi in list(zip(self.w, x)):
+      #     weighted_sum += (wi * xi)
+      # weighted_sum += self.b
+      # activation = weighted_sum.tanh()
+      # return activation
+  def __repr__(self):
+     return f"Node: inputs = {self.n_inputs} weights = [{self.get_weights_str()}]"
+  def get_weights_str(self):
+     output = ""
+     for w in self.w:
+        output += str(w.data)+", "
+     return output
 
-    def __repr__(self):
-        return f"inputs={self.inputs} weights={self.w}"
 
 class Layer:
-  # Layer(number of inputs, number of outputs or number of nodes in)
-  def __init__(self, nin, nout):
-    self.neurons = [Neuron(nin) for _ in range(nout)]
+    # Layer(number of inputs, number of outputs or number of nodes in layer)
+    def __init__(self, nin, nout):
+        self.neurons = [Neuron(nin) for _ in range(nout)]
 
-  def __call__(self, x): # when layer object is called like Layer() givne inputs-x = []
-
-    outs = [n(x) for n in self.neurons] # iterate nodes of layer and call forward pass on them
-    return outs   # return ouputs of each node in layer in a array
-  
-  def __repr__(self):
-    return f"Layer of [{', '.join(str(n) for n in self.neurons)}]"
+    def __call__(self, x): # when layer object is called like Layer() givne inputs-x = []
+        outs = [n(x) for n in self.neurons] # iterate nodes of layer and call forward pass on them
+        return outs   # return ouputs of each node in layer in a array
+    
+    def __repr__(self):
+        output = "Layer: "
+        for node in self.neurons:
+           output += str(node)+"\n\t"
+        return output
 
 class MLP:
-  def __init__(self, nin, layer_sizes): # (number of inputs int, array of sizes of each layer )
-    self.network_dimensions = [nin] + layer_sizes # adds list of input integer to array of layer-sizes
-    self.layers = [Layer(self.network_dimensions[i], self.network_dimensions[i+1]) for i in range(len(layer_sizes))]
+    def __init__(self, nin, layer_sizes): # (number of inputs int, array of sizes of each layer )
+      self.network_dimensions = [nin] + layer_sizes # adds list of input integer to array of layer-sizes
+      self.layers = [Layer(self.network_dimensions[i], self.network_dimensions[i+1]) for i in range(len(layer_sizes))]
 
-  def __call__(self, x):
-    for layer in self.layers:
-      x = layer(x)
-    return x
-  
-  def __repr__(self):
-    return f"MLP of [{', '.join(str(layer) for layer in self.layers)}]"
+    def __call__(self, x):
+      for layer in self.layers:
+        x = layer(x)
+      return x
+    
+    def __repr__(self):
+      return f"MLP of [{', '.join(str(layer) for layer in self.layers)}]"
 
 
 def main():
-    x = [2.0, 3.0]
-    n = MLP(3, [4, 4, 1]) # 3-input-nodes, 2 hidden layers each with 4 nodes, 1-ouput-layer
-    print(n)
-    n(x)
-    print("dimensions: "+str(n.network_dimensions))
-    for i, layer in enumerate(n.layers):
-        print("i: "+str(i)+", "+str(repr(layer)))
-        for j, node in enumerate(layer.neurons):
-            print("\tj: "+str(j)+" "+str(repr(node)))
+    x = [2.0, 3.0]     # creatings 2 inputs into the neuron
+    n = Neuron(len(x)) # passing in number of inputs in Neuron-obj
+    print(n(x))   # calling that neuron computes its forward-pass and reuturns the output-Value-obj
+
+    # x = [2.0, 3.0] # to the layer we have 2 inputs
+    # l = Layer(2, 3) # and 3 nodes in the layer
+    # print(l(x)) 
+
+
 main()
 
