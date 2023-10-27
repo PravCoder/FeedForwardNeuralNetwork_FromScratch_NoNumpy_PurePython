@@ -137,41 +137,55 @@ class Neuron:
 class Layer:
     # Layer(number of inputs, number of outputs or number of nodes in layer)
     def __init__(self, nin, nout):
+        # for every node in current-layer create Neuron-obj for cur-layer passing in number of inputs for that neuron which in number of nodes in previous layer
         self.neurons = [Neuron(nin) for _ in range(nout)]
 
-    def __call__(self, x): # when layer object is called like Layer() givne inputs-x = []
-        outs = [n(x) for n in self.neurons] # iterate nodes of layer and call forward pass on them
+    def __call__(self, x): # given inputs to layer, 
+        outs = [n(x) for n in self.neurons] # for each Neuron-obj in layer call forward-pass on each node adn store its output in list
         return outs   # return ouputs of each node in layer in a array
     
     def __repr__(self):
-        output = "Layer: "
+        string = "Layer:\t"
         for node in self.neurons:
-           output += str(node)+"\n\t"
-        return output
+           string += str(node)+"\n\t"
+        return string
 
 class MLP:
-    def __init__(self, nin, layer_sizes): # (number of inputs int, array of sizes of each layer )
-      self.network_dimensions = [nin] + layer_sizes # adds list of input integer to array of layer-sizes
+    def __init__(self, nin, layer_sizes): # MLP(number of input-nodes into network, [array of sizes of all hidden and output layers])
+      self.network_dimensions = [nin] + layer_sizes # combine them to create a list of all the sizes of layers
+      # for every layer-size create a Layer passing in number of inputs to that layer as the cur-size and numbmer of nodes in that layer as the next-size
       self.layers = [Layer(self.network_dimensions[i], self.network_dimensions[i+1]) for i in range(len(layer_sizes))]
 
-    def __call__(self, x):
+    def __call__(self, x): # for every layer in network compute the forward pass on each layer which reutrns list of outputs for cur-layer reuturn outputs of array of last layer
       for layer in self.layers:
         x = layer(x)
       return x
     
     def __repr__(self):
-      return f"MLP of [{', '.join(str(layer) for layer in self.layers)}]"
+      string = ""
+      for layer in self.layers:
+         string += str(layer)+"\n"
+      return string
 
 
 def main():
-    x = [2.0, 3.0]     # creatings 2 inputs into the neuron
-    n = Neuron(len(x)) # passing in number of inputs in Neuron-obj
-    print(n(x))   # calling that neuron computes its forward-pass and reuturns the output-Value-obj
+    # SINGLE NEURON
+    # x = [2.0, 3.0]     # creating 2 inputs into the neuron
+    # n = Neuron(len(x)) # passing in number of inputs in Neuron-obj
+    # print(n(x))   # calling that neuron computes its forward-pass and reuturns the output-Value-obj
+    # print(n)
 
-    # x = [2.0, 3.0] # to the layer we have 2 inputs
-    # l = Layer(2, 3) # and 3 nodes in the layer
-    # print(l(x)) 
+    # SINGLE LAYER
+    # x = [2.0, 3.0]  # inputs into the layer or the output of nodes in previous layer
+    # l = Layer(len(x), 3) # creating layer by passing number of nodes in previous layer and number of nodes in current layer
+    # print(l(x))     # calling forward pass on that layer passing inputs or outputs of previous layer, which computes forward pass on each node in cur-layer and returns output of each node in cur-layer stores in list which are Value-obj
+    # print(l)
 
+    # NETWORK
+    x = [2.0, 3.0, -1.0]
+    n = MLP(len(x), [4, 4, 1]) # [3,4, 4, 1] is the architecture of the network
+    print("Outputs: "+str(n(x))) # passing in inputs into network to compute forward pass return list of outputs for output-layer which are Value-objs
+    print(n)
 
 main()
 
