@@ -20,11 +20,11 @@ class Value:
       other = other if isinstance(other, Value) else Value(other) # if other is primative integer convert it to value-obj
       out = Value(self.data + other.data, (self, other), "+") # output is new Value-obj with addition of data and passing in self-Value-obj and other-Value-obj as children of output
 
-      def _backward():
+      def _backward():  # creating chain-rule backward funciton for this value for backprop
         self.grad += 1.0 * out.grad  # [local-grad * global-grad] chain-rule, global-grad = derivative of final output of expression respect to out
         other.grad += 1.0 * out.grad # output-grad is basically being copied into self-grad dand other-grad
 
-      out._backward = _backward
+      out._backward = _backward # saving the backward function
       return out
 
 
@@ -103,6 +103,10 @@ class Value:
           topo.append(v)          # 3: after iterating chldren add given-root-node to topological-list
       build_topo(self)   # call function by first passing in o-root-node
 
+      # go one variable at a time and apply the chain rule to get its gradient
+      self.grad = 1
+      for v in reversed(topo):
+          v._backward()
 
 
 
@@ -110,7 +114,7 @@ class Neuron:
 
   def __init__(self, n_inputs): # Neuron(number of inputs to flowing into the node)
       # weights = tuple(), for every input-node create a value-weight-obj with ranomd initalized value, same for bias of this neuron
-      self.w = tuple(Value(random.uniform(-1,1)) for _ in range(n_inputs))
+      self.w = list(Value(random.uniform(-1,1)) for _ in range(n_inputs))
       self.b = Value(random.uniform(-1, 1))
       self.n_inputs = n_inputs
 
@@ -125,6 +129,8 @@ class Neuron:
       # weighted_sum += self.b
       # activation = weighted_sum.tanh()
       # return activation
+  def parameters(self):
+     return self.w + [self.b]  # concatanation of parameters
   def __repr__(self):
      return f"Node: inputs = {self.n_inputs} weights = [{self.get_weights_str()}]"
   def get_weights_str(self):
@@ -149,6 +155,11 @@ class Layer:
         for node in self.neurons:
            string += str(node)+"\n\t"
         return string
+    def parameters(self):
+       params = []  # collect all parameters of neurons in this layer in a single list-1D
+       for neuron in self.neurons:
+          params.extend(neuron.parameters())
+       return params
 
 class MLP:
     def __init__(self, nin, layer_sizes): # MLP(number of input-nodes into network, [array of sizes of all hidden and output layers])
@@ -160,6 +171,12 @@ class MLP:
       for layer in self.layers:
         x = layer(x)
       return x
+    
+    def parameters(self):
+       params = []
+       for layer in self.layers:
+          params.extend(layer.parameters())
+       return params
     
     def __repr__(self):
       string = ""
@@ -182,10 +199,57 @@ def main():
     # print(l)
 
     # NETWORK
-    x = [2.0, 3.0, -1.0]
-    n = MLP(len(x), [4, 4, 1]) # [3,4, 4, 1] is the architecture of the network
-    print("Outputs: "+str(n(x))) # passing in inputs into network to compute forward pass return list of outputs for output-layer which are Value-objs
-    print(n)
+    # x = [2.0, 3.0, -1.0]
+    # n = MLP(len(x), [4, 4, 1]) # [3,4, 4, 1] is the architecture of the network
+    # print("Outputs: "+str(n(x))) # passing in inputs into network to compute forward pass return list of outputs for output-layer which are Value-objs
+    # print(n)
+
+    # MANUAL OPTIMIZATION
+    x = [                   # input-values each row is an example, each element in each row is input-value for that node in network
+       [2.0, 3.0, -1.0],
+       [3.0, -1.0, 0.5],
+       [0.5, 1.0, 1.0],
+       [1.0, 1.0, -1.0],
+    ]
+    y = [1.0, -1.0, -1.0, 1.0]  # labels or desired output values for each the 4 examples
+    n = MLP(len(x[0]), [4, 4, 1])
+    # ypred = [n(example) for example in x]  # has 4 predictions bceause there 4 exampeles and 1 output-node, list of lists [[Value(data=0.6796846587854642, grad=0)], [Value(data=0.7896385140608211, grad=0)], [Value(data=0.44224397382376673, grad=0)], [Value(data=0.8391969511170917, grad=0)]]
+    # print("Y: " + str(y))
+    # print("Y-PRED: "+str(ypred))
+
+    # print("---------------------------------------------------------------------------------------------------------")
+    # loss = [(yout[0]-ygt)**2 for ygt, yout in zip(y, ypred)]  # for every label, prediction in pairing of y-dataset, predictions compute MSE loss
+    # print("LOSS (each example):  "+str(loss))      # look at predictions and labels, more off the prediction higher the loss
+    # loss = sum([(yout[0]-ygt)**2 for ygt, yout in zip(y, ypred)]) # sum MSE loss for each example
+    # print("LOSS (sum): "+str(loss))
+    # print("---------------------------------------------------------------------------------------------------------")
+
+    # loss.backward()  # starting from root-node loss-Value-obj do a backward pass, when you print a
+    # print("Parameters: "+str(len(n.parameters())))  # get all parametesr in network in list and see number of parameters
+    # print("Random Neuron after backward has a gradient: "+str(n.layers[0].neurons[0].w[0]))
+    
+
+    lr = -0.05
+    # number of iterations
+    for i in range(20):
+      # compute forward
+      ypred = [n(example) for example in x] 
+      # compute loss, for pair every prediction and y-ground-truth, y-ouptut-label adn compute MSE for each example and sum
+      loss = sum([(yout[0]-ygt)**2 for ygt, yout in zip(y, ypred)]) 
+      # reset gradients
+      for p in n.parameters():
+         p.grad = 0
+      # backprop acuumalte gradients through chain rule for this iteration
+      loss.backward() 
+      # iterate parmeters and update with leanring-rate and parameter gradient
+      for p in n.parameters():
+        p.data += lr * p.grad
+      print("LOSS (after gradient descent)-"+str(i)+": " +str(loss))
+
+    print("Y: " + str(y))
+    print("Y-PRED (after gradient descent): "+str(ypred))
+    # if learning rate/iterations is too high it might over step and increase loss
+    
 
 main()
 
