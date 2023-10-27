@@ -162,15 +162,45 @@ class Layer:
        return params
 
 class MLP:
-    def __init__(self, nin, layer_sizes): # MLP(number of input-nodes into network, [array of sizes of all hidden and output layers])
+    def __init__(self, nin, layer_sizes, learning_rate): # MLP(number of input-nodes into network, [array of sizes of all hidden and output layers])
       self.network_dimensions = [nin] + layer_sizes # combine them to create a list of all the sizes of layers
       # for every layer-size create a Layer passing in number of inputs to that layer as the cur-size and numbmer of nodes in that layer as the next-size
       self.layers = [Layer(self.network_dimensions[i], self.network_dimensions[i+1]) for i in range(len(layer_sizes))]
+      self.learning_rate = learning_rate
+      self.loss = 0
 
     def __call__(self, x): # for every layer in network compute the forward pass on each layer which reutrns list of outputs for cur-layer reuturn outputs of array of last layer
       for layer in self.layers:
         x = layer(x)
       return x
+    def reset_grads(self):
+       for p in self.parameters():
+          p.grad = 0
+  
+    
+    def forward_pass(self, x , show_preds=False):
+       y_preds = []
+       for example in x:
+          y_preds.append(self.__call__(example))
+       if show_preds: print("Y-Pred: "+str(y_preds))
+       return y_preds
+    
+    def compute_loss(self, y, y_preds):
+       loss_for_examples = []
+       for label, pred in zip(y, y_preds):
+          loss_for_examples.append((label - pred[0])**2)
+
+       self.loss = sum(loss_for_examples)
+       print("Loss: "+str(self.loss))
+
+    def backward_pass(self):
+      self.reset_grads()
+      self.loss.backward()
+      
+    def update_parameters(self):
+       for p in self.parameters():
+          p.data += self.learning_rate * p.grad
+    
     
     def parameters(self):
        params = []
@@ -186,6 +216,25 @@ class MLP:
 
 
 def main():
+    x = [                   # input-values each row is an example, each element in each row is input-value for that node in network
+       [2.0, 3.0, -1.0],
+       [3.0, -1.0, 0.5],
+       [0.5, 1.0, 1.0],
+       [1.0, 1.0, -1.0],
+    ]
+    y = [1.0, -1.0, -1.0, 1.0]  # labels or desired output values for each the 4 examples
+    n = MLP(len(x[0]), [4, 4, 1], -0.05)
+
+    y_preds = n.forward_pass(x)
+    for i in range(20):
+       y_preds = n.forward_pass(x)
+       n.compute_loss(y, y_preds)
+       n.backward_pass()
+       n.update_parameters()
+    print("Y-PRED (after gradient descent): "+str(y_preds))
+
+
+    
     # SINGLE NEURON
     # x = [2.0, 3.0]     # creating 2 inputs into the neuron
     # n = Neuron(len(x)) # passing in number of inputs in Neuron-obj
@@ -205,14 +254,14 @@ def main():
     # print(n)
 
     # MANUAL OPTIMIZATION
-    x = [                   # input-values each row is an example, each element in each row is input-value for that node in network
-       [2.0, 3.0, -1.0],
-       [3.0, -1.0, 0.5],
-       [0.5, 1.0, 1.0],
-       [1.0, 1.0, -1.0],
-    ]
-    y = [1.0, -1.0, -1.0, 1.0]  # labels or desired output values for each the 4 examples
-    n = MLP(len(x[0]), [4, 4, 1])
+    # x = [                   # input-values each row is an example, each element in each row is input-value for that node in network
+    #    [2.0, 3.0, -1.0],
+    #    [3.0, -1.0, 0.5],
+    #    [0.5, 1.0, 1.0],
+    #    [1.0, 1.0, -1.0],
+    # ]
+    # y = [1.0, -1.0, -1.0, 1.0]  # labels or desired output values for each the 4 examples
+    # n = MLP(len(x[0]), [4, 4, 1], -0.05)
     # ypred = [n(example) for example in x]  # has 4 predictions bceause there 4 exampeles and 1 output-node, list of lists [[Value(data=0.6796846587854642, grad=0)], [Value(data=0.7896385140608211, grad=0)], [Value(data=0.44224397382376673, grad=0)], [Value(data=0.8391969511170917, grad=0)]]
     # print("Y: " + str(y))
     # print("Y-PRED: "+str(ypred))
@@ -228,27 +277,27 @@ def main():
     # print("Parameters: "+str(len(n.parameters())))  # get all parametesr in network in list and see number of parameters
     # print("Random Neuron after backward has a gradient: "+str(n.layers[0].neurons[0].w[0]))
     
+    # lr = -0.05
+    # # number of iterations
+    # for i in range(20):
+    #   # compute forward
+    #   ypred = [n(example) for example in x] 
+    #   # compute loss, for pair every prediction and y-ground-truth, y-ouptut-label adn compute MSE for each example and sum
+    #   loss = sum([(yout[0]-ygt)**2 for ygt, yout in zip(y, ypred)]) 
+    #   # reset gradients
+    #   for p in n.parameters():
+    #      p.grad = 0
+    #   # backprop acuumalte gradients through chain rule for this iteration
+    #   loss.backward() 
+    #   # iterate parmeters and update with leanring-rate and parameter gradient
+    #   for p in n.parameters():
+    #     p.data += lr * p.grad
+    #   print("LOSS (after gradient descent)-"+str(i)+": " +str(loss))
 
-    lr = -0.05
-    # number of iterations
-    for i in range(20):
-      # compute forward
-      ypred = [n(example) for example in x] 
-      # compute loss, for pair every prediction and y-ground-truth, y-ouptut-label adn compute MSE for each example and sum
-      loss = sum([(yout[0]-ygt)**2 for ygt, yout in zip(y, ypred)]) 
-      # reset gradients
-      for p in n.parameters():
-         p.grad = 0
-      # backprop acuumalte gradients through chain rule for this iteration
-      loss.backward() 
-      # iterate parmeters and update with leanring-rate and parameter gradient
-      for p in n.parameters():
-        p.data += lr * p.grad
-      print("LOSS (after gradient descent)-"+str(i)+": " +str(loss))
+    # print("Y: " + str(y))
+    # print("Y-PRED (after gradient descent): "+str(ypred))
+    # # if learning rate/iterations is too high it might over step and increase loss
 
-    print("Y: " + str(y))
-    print("Y-PRED (after gradient descent): "+str(ypred))
-    # if learning rate/iterations is too high it might over step and increase loss
     
 
 main()
