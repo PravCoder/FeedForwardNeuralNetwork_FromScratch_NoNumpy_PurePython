@@ -162,7 +162,7 @@ class Layer:
        return params
 
 class MLP:
-    def __init__(self, nin, layer_sizes, learning_rate, train_x, train_y): # MLP(number of input-nodes into network, [array of sizes of all hidden and output layers])
+    def __init__(self, nin, layer_sizes, learning_rate, train_x, train_y, num_iterations): # MLP(number of input-nodes into network, [array of sizes of all hidden and output layers])
       self.network_dimensions = [nin] + layer_sizes # combine them to create a list of all the sizes of layers
       # for every layer-size create a Layer passing in number of inputs to that layer as the cur-size and numbmer of nodes in that layer as the next-size
       self.layers = [Layer(self.network_dimensions[i], self.network_dimensions[i+1]) for i in range(len(layer_sizes))]
@@ -170,6 +170,7 @@ class MLP:
       self.loss = 0
       self.train_x = train_x
       self.train_y = train_y
+      self.num_iterations = num_iterations
 
     def __call__(self, x): # for every layer in network compute the forward pass on each layer which reutrns list of outputs for cur-layer reuturn outputs of array of last layer
       for layer in self.layers:
@@ -215,6 +216,20 @@ class MLP:
       for layer in self.layers:
          string += str(layer)+"\n"
       return string
+    
+    def predict(self, x):
+       self.x = x
+       y_preds = self.forward_pass()
+       return y_preds
+    
+    def train(self, show_preds=False):
+       y_preds = self.forward_pass()  # y_predictions are updated every iteration
+       for i in range(self.num_iterations):
+          y_preds = self.forward_pass()
+          self.compute_loss(y_preds)
+          self.backward_pass()
+          self.update_parameters()
+       if show_preds: print("Y-PRED (after gradient descent): "+str(y_preds))
 
 
 
@@ -245,46 +260,31 @@ def main():
     ]
     y = [1.0, -1.0, -1.0, 1.0]  # 1D list of labels labels or desired output values for each the 4 examples
 
-    n = MLP(len(x[0]), [5, 5, 1], -0.075, x, y)
+    n = MLP(len(x[0]), [5, 5, 1], -0.075, x, y, 10)
 
-    y_preds = n.forward_pass()
-    for i in range(50):
-       y_preds = n.forward_pass()
-       n.compute_loss(y_preds)
-       n.backward_pass()
-       n.update_parameters()
-    print("Y-PRED (after gradient descent): "+str(y_preds))
-
+    n.train(show_preds=True)
 
 
 def main_fit_curve():
     # get raw dataset in 1D-lists
-    rawX, rawY = generate_sine_data(num_samples=200)
+    rawX, rawY = generate_sine_data(num_samples=50)
     # format data-x by hvaing eahc example in its own list and add that list to hte big list, format data-y by again adding the y-values to 1D-list
     train_x, train_y = reformat_data(rawX, rawY)
 
-    n = MLP(len(train_x[0]), [32, 1], -0.001, train_x, train_y) # 0.001
+    n = MLP(len(train_x[0]), [32, 1], -0.001, train_x, train_y, 100) # 0.001
 
-    y_preds = n.forward_pass()
-    for i in range(1000):
-       y_preds = n.forward_pass()
-       n.compute_loss(y_preds)
-       n.backward_pass()
-       n.update_parameters()
-
+    n.train()
 
     print("X: "+str(len(train_x)))
     print("Y: "+str(len(train_y)))
-    x_values = [x[0] for x in train_x]
-    y_values = [y for y in train_y]
-    predictions = []
-    for i, input in enumerate(x_values):
-        predictions.append(y_preds[i][0].data)
+    graph_x_labels = [x[0] for x in train_x]
+    graph_y_labels = [y for y in train_y]
+    network_predictions = [value_obj[0].data for value_obj in n.predict(train_x)]
 
     # Plot the sine curve data
     plt.figure(figsize=(8, 6))
-    plt.scatter(x_values, y_values, color='blue', label='Noisy Sine Curve Data')
-    plt.scatter(x_values, predictions, color='red', label='Network Predictions')
+    plt.scatter(graph_x_labels, graph_y_labels, color='blue', label='Noisy Sine Curve Data')
+    plt.scatter(graph_x_labels, network_predictions, color='red', label='Network Predictions')
     plt.xlabel('X')
     plt.ylabel('Y')
     plt.title('Generated Sine Curve Data')
