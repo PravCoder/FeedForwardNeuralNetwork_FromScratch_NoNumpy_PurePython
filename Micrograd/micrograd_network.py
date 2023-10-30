@@ -146,15 +146,16 @@ class Layer:
         # for every node in current-layer create Neuron-obj for cur-layer passing in number of inputs for that neuron which in number of nodes in previous layer
         self.neurons = [Neuron(nin) for _ in range(nout)]
 
-    def __call__(self, x): # given inputs to layer, 
-        outs = [n(x) for n in self.neurons] # for each Neuron-obj in layer call forward-pass on each node adn store its output in list
-        return outs   # return ouputs of each node in layer in a array
-    
     def __repr__(self):
         string = "Layer:\t"
         for node in self.neurons:
            string += str(node)+"\n\t"
         return string
+
+    def __call__(self, x): # given inputs to layer
+        outs = [n(x) for n in self.neurons] # for each Neuron-obj in layer call forward-pass on each node adn store its output in list
+        return outs   # return ouputs of each node in layer in a array
+    
     def parameters(self):
        params = []  # collect all parameters of neurons in this layer in a single list-1D
        for neuron in self.neurons:
@@ -167,19 +168,19 @@ class MLP:
       # for every layer-size create a Layer passing in number of inputs to that layer as the cur-size and numbmer of nodes in that layer as the next-size
       self.layers = [Layer(self.network_dimensions[i], self.network_dimensions[i+1]) for i in range(len(layer_sizes))]
       self.learning_rate = learning_rate
-      self.loss = 0
-      self.train_x = train_x
-      self.train_y = train_y
-      self.num_iterations = num_iterations
+      self.loss = 0            # loss Value-obj for current iteration
+      self.train_x = train_x   # training input dataset
+      self.train_y = train_y   # training output dataset
+      self.num_iterations = num_iterations  # number of training epochs
 
-    def __call__(self, x): # for every layer in network compute the forward pass on each layer which reutrns list of outputs for cur-layer reuturn outputs of array of last layer
-      for layer in self.layers:
-        x = layer(x)
-      return x
     def reset_grads(self):
        for p in self.parameters():
           p.grad = 0
-  
+
+    def __call__(self, x): # given an input-example pass it in each layer-obj
+      for layer in self.layers:  # for every layer in network compute the forward pass on each layer which returns list of outputs for cur-layer
+        x = layer(x)
+      return x      # return array of outputs of last layer
     
     def forward_pass(self, show_preds=False):
        y_preds = []
@@ -190,26 +191,27 @@ class MLP:
     
     def compute_loss(self, y_preds):
        loss_for_examples = []
+       # iterate examples
        for m in range(len(self.train_y)):
-          loss_for_nodes = 0
+          loss_for_nodes = 0                # sum of losses for individual output-nodes
+          # iterate output-nodes
           for j in range(self.network_dimensions[-1]):
-             label_node = self.train_y[m][j]
-             pred_node = y_preds[m][j]
-            #  print(label_node, pred_node)
-             loss_for_nodes += ((label_node - pred_node)**2)
+             label_node = self.train_y[m][j]    # get label for current example and output-node 
+             pred_node = y_preds[m][j]          # get prediction for current example and output-node
+             loss_for_nodes += ((label_node - pred_node)**2)  # compute MSE loss for current example and singular output-node, and accumlate sum of loss for output-nodes
 
-          loss_for_nodes /= self.network_dimensions[-1]
-          loss_for_examples.append(loss_for_nodes)
+          loss_for_nodes /= self.network_dimensions[-1] # average loss-sum by number of output-nodes
+          loss_for_examples.append(loss_for_nodes)     # add the current-example loss to a list
        
-       self.loss = sum(loss_for_examples)
+       self.loss = sum(loss_for_examples)  # sum losses for all examples
        print("Loss: "+str(self.loss))
 
     def backward_pass(self):
-      self.reset_grads()
-      self.loss.backward()
+      self.reset_grads()    # reset the gradients Value-obj.grad - 0
+      self.loss.backward()  # calling backward-func on loss-Value-obj
       
     def update_parameters(self):
-       for p in self.parameters():
+       for p in self.parameters(): # iterate parameters which are Value-objs 
           p.data = p.data + (self.learning_rate * p.grad)
     
     
@@ -226,14 +228,15 @@ class MLP:
       return string
     
     def predict(self, x):
-       self.x = x
+       self.x = x  # given new input-dataset update attribute and call forward-pass which returns predictions
        y_preds = self.forward_pass()
        return y_preds
     
     def train(self, show_preds=False):
-       y_preds = self.forward_pass()  # y_predictions are updated every iteration
+       y_preds = self.forward_pass()  # call forward-pass returns predictions, y_predictions are updated every iteration
+       # iterate every epoch
        for i in range(self.num_iterations):
-          y_preds = self.forward_pass()
+          y_preds = self.forward_pass()   # call forward-pass returns predictions
           self.compute_loss(y_preds)
           self.backward_pass()
           self.update_parameters()
@@ -285,7 +288,7 @@ def main_fit_curve():
     # format data-x by hvaing eahc example in its own list and add that list to hte big list, format data-y by again adding the y-values to 1D-list
     train_x, train_y = reformat_data(rawX, rawY)
 
-    n = MLP(len(train_x[0]), [32, 1], -0.001, train_x, train_y, 100) # 0.001
+    n = MLP(len(train_x[0]), [32, 1], -0.001, train_x, train_y, num_iterations=200) # 0.001
 
     n.train()
 
