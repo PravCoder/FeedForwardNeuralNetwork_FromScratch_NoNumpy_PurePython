@@ -1,0 +1,84 @@
+
+CAUTIONS/REMINDERS/DISCLAIMERS:
+1. Turn off l2-regularization when using momentum or adam optimizer. 
+2. Configure binary-classification/multiclass-classification either off and on.
+3. The decision for a correct predicition is different for every problem. 
+4. To set hyperparameters manually cannot pass through network, have to change attribute in __init__ function.
+5. If you don't notice a difference between noraml gradient descent and a optimzer method, this could be because of the lack of dataset size and complexity, it aslo depends on beta1 and learning rate.
+6. Adam sometimes causes numerical instability when values explode to very small values. 
+7. Epsilon is added to denomintor of Adam update rule to prevent zero divison.
+8. RuntimeWarning: invalid value encountered in double_scalars, this occurs when you try to perform math computations with really large/small values.
+9. Adjust beta1, beta2, learning_rate for specific problem when using Adam optimization.
+10. L2-regularization + optimization algorithm is untested.
+11. For learning rate decay if alpha is updated at every iteration it may cause it go to 0 to quickly. That is why
+current version of leanring rate decay is fixed interval scheduling.
+12. When using learning rate decay, you increase the initial learning rate to avoid going zero and to take
+bigger steps toward the minimum.
+13. Update matplot lib window size to visualize cost better.
+
+BUGS/PROBLEMS:
+1. Graident checking is saying that backapropagation implementation is incorrect
+   this could be because gradient checking is incorrect. 
+2. Adam optimzation is currently not wokring it may cause RuntimeWarning: invalid value encountered in double_scalars, slgihtly increasing cost, very slow decrease of cost, and constant cost.
+3. Overflow error is possible in cost computation. Solution is to round computations. a
+
+WORKING:
+1. Momentum optimization is decreasing cost for all datasets
+2. Batch gradient descent is decreasing cost for all datasets
+
+
+MINI-BATCH GRADIENT DESCENT DISCLAIMERS:
+1. For some problems cost doesn't ocilate as it should, but the cost decreases.
+2. It's not uncommon to observe a rapid decrease in cost followed by a slower, gradual decrease when using mini-batch gradient descent. This behavior is generally expected and can be attributed to the noisy nature of the mini-batch updates.
+During the initial steps, the model quickly adapts to the mini-batch samples, which might lead to a significant drop in the cost function. However, as the training progresses and the model gets closer to convergence, the updates become smaller, leading to a slower decrease in the cost.
+As long as the cost is decreasing over time, it indicates that the model is learning and making progress.
+4. If you want to try batch or stochastic gradient descent change the "gradient_descent_variant" parameter in the object and the mini-batch size accordingly, if 
+you dont change mini-batch size it will still do it for you. If you use batch it doesnt matter what the mini-batch size it will change to the total number of examples.
+5. Ocilation is more visible adn occurs more frequently in stochastic gradient and then jumps up expoentially.
+6. SGD introduces a significant amount of randomness into the updates because it updates the parameters based on just one training example at a time. This randomness can lead to more erratic and oscillatory behavior in the cost function compared to other optimization methods like mini-batch gradient descent.
+The initial huge dip you observe might be due to the model quickly adapting to the particular training example used in that step. However, since SGD updates are very noisy, the model might also overshoot the optimal parameters, leading to oscillations and potentially even jumping over better parameter values.
+While SGD can converge faster because of its frequent updates, it might not always guarantee the smooth and steady decrease in the cost function like mini-batch gradient descent. Some techniques like learning rate annealing (reducing the learning rate over time) or using a schedule for the learning rate can help alleviate the oscillatory behavior to some extent. Experimenting with these techniques might help in getting a more stable convergence.
+In summary, observing oscillations and fluctuations in the cost function when using SGD is not unusual. It's a trade-off between faster updates and potential erratic behavior. If your goal is to have a smoother and more stable convergence, you might consider using mini-batch gradient descent or other optimization methods.
+
+OTHER:
+1. A sudden drop in the cost followed by a plateau-like behavior can sometimes indicate that the model has started to memorize the training data instead of generalizing from it. can also occur if the optimization process gets stuck in a local minimum of the cost function. In this case, the model might not have enough information or flexibility to escape this local minimum and find a better solution
+2. As of right now the gradient computation is based on the fact that the cost function cross-entropy, if the cost function changes so does the formulas for gradient
+computation.
+
+
+--------------------------------
+Binary Classification:
+Cost Function: Binary Cross-Entropy (Log Loss).
+Activation Function: Sigmoid for the output layer.
+Deciding Correct Prediction: If the sigmoid output is greater than a threshold (usually 0.5), classify as class 1; otherwise, classify as class 0.
+Evaluating Accuracy: Calculate accuracy as the number of correct predictions divided by the total number of examples.
+--------------------------------
+Multi-Class Classification:
+Cost Function: Categorical Cross-Entropy.
+Activation Function: Softmax for the output layer to obtain normalized class probabilities.
+Deciding Correct Prediction: Select the class with the highest probability as the predicted class.
+Evaluating Accuracy: Calculate accuracy as the number of correctly predicted examples divided by the total number of examples.
+--------------------------------
+Regression:
+Cost Function: Mean Squared Error (MSE).
+Activation Function: Linear activation function (identity function) for the output layer.
+Deciding Correct Prediction: There's no concept of "correct prediction" as in classification. Predicted values are continuous.
+Evaluating Accuracy: Calculate metrics like Mean Absolute Error (MAE).
+Mini-Batches: There is no mini-batch/stochastic gradient descnet for regresion tasks because there is no cost function for it.
+
+
+
+
+PONG AI SIMULATION:
+- To collect data comment the network train method and set collect_data to True, when the game is running press space to print the 
+the data collected from that game
+- Copy and paste that date in a another pythno file, import the train_x/train_y variables and use those to train the network. 
+- To train the network uncomment the network train method and set collect_data to False
+
+# DEBUG STRATEGIES:
+# (Success)- Collect 20 consective streak data yields 4 longest streak and paddle is moving up and down more.
+# (Fail)- Collect 30 consectutive streak data adn trainn using same network. 
+# (Fail)- Adding more inputs regarding velocity of ball. With more data. 
+# ()- Try differnet optimization methods.
+# (F)- More iterations. causes math domain error
+# (F)- Deeper network architecture. Causes math domain error. 
