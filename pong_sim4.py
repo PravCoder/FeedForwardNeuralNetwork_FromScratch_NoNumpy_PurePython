@@ -95,9 +95,9 @@ def main():
         ball.check_vertical_wall_collision()    # reverses y-direction if it hits he top/bottom of screen#
 
         if collect_game_data == True:
-            paddle2.automate_movement(ball)
+            paddle2.predict_movement_micrograd(ball)
         if collect_game_data == False:
-            paddle2.predict_movement( ball.rect.y/100, paddle1.rect.y/100 )
+            paddle2.predict_movement_micrograd( ball.rect.y/100, paddle1.rect.y/100 )
 
         # WIN CONDITION
         current_streak, longest_streak = check_win(ball, current_streak, longest_streak)
