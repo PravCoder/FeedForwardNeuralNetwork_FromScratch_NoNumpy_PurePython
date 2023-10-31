@@ -1,7 +1,6 @@
 import math
 import numpy as np
 import matplotlib.pyplot as plt
-from graphviz import Digraph
 import random
 
 # MANUAL BACKPROPAGATION EXAMPLE
@@ -308,7 +307,8 @@ def main_fit_curve():
     plt.legend()
     plt.show()
 
-main_fit_curve()
+if __name__ == "__main__":
+   main_fit_curve()
 
 
 #---------------------------------------------------------------------------------------------------------------------
