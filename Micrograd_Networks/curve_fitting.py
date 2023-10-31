@@ -1,7 +1,7 @@
 import random
 import math
-import sys
-from Micrograd.micrograd_network import Neuron
+from Micrograd_Networks import *
+
 
 def generate_sine_data(num_samples=100, noise_factor=0.1):
     X = [random.uniform(0, 2 * math.pi) for _ in range(num_samples)]
