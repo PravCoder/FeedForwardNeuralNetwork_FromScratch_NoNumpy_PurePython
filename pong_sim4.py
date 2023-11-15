@@ -64,7 +64,7 @@ def calculate_distance(ball, paddle):
 # USE PONG 2 DATA
 def main():
     layers_dims = [2, 2]
-    paddle_nn = FeedForwardNeuralNetwork(train_x, train_y, layers_dims, 0.075, 100, l2_regularization=False, binary_classification=False, multiclass_classification=True, regression=False, optimizer="gradient descent", learning_rate_decay=False, gradient_descent_variant="batch")
+    paddle_nn = FeedForwardNeuralNetwork(train_x, train_y, layers_dims, 0.075, 100,  binary_classification=False, multiclass_classification=True, regression=False, optimizer="gradient descent", learning_rate_decay=False, gradient_descent_variant="batch")
     paddle_nn.train()  # dont train when collecting data
 
     paddle1 = Paddle(10, 150, WIDTH, HEIGHT, "L", 5, BLACK, "neural_network")
@@ -95,9 +95,9 @@ def main():
         ball.check_vertical_wall_collision()    # reverses y-direction if it hits he top/bottom of screen#
 
         if collect_game_data == True:
-            paddle2.predict_movement_micrograd(ball)
+            paddle2.predict_movement_7(ball)
         if collect_game_data == False:
-            paddle2.predict_movement_micrograd( ball.rect.y/100, paddle1.rect.y/100 )
+            paddle2.predict_movement_7( ball.rect.y/100, paddle1.rect.y/100 )
 
         # WIN CONDITION
         current_streak, longest_streak = check_win(ball, current_streak, longest_streak)

@@ -73,7 +73,7 @@ class Paddle:
 
     def predict_movement_micrograd(self, ballX, ballY):
         inputs = [[ballX, ballY]]
-        y_preds = self.neural_network.predic(inputs)
+        y_preds = self.neural_network.predict(inputs)
         print("Predictions: "+str(y_preds))
         
 

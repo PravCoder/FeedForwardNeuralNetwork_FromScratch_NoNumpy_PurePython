@@ -25,17 +25,18 @@ def reformat_data(x, y):
     
 
 def main():
-    layers_dims = [1, 10,10, 1]
-    X, Y = generate_sine_data(num_samples=5000, noise_factor=0.1)
+    layers_dims = [1, 32, 1]
+    X, Y = generate_sine_data(num_samples=50, noise_factor=0.1)
     x_values = [x[0] for x in X]
     y_values = [y[0] for y in Y]
     train_x, train_y = reformat_data(x_values, y_values)
-    nn = FeedForwardNeuralNetwork(train_x, train_y, layers_dims, 0.001, 10000, regression=True)
+    nn = FeedForwardNeuralNetwork(train_x, train_y, layers_dims, 0.001, 500, regression=True)
     nn.train()
 
     predictions = []
     for input in x_values:
-        predictions.append(nn.predict([[input]])[0])
+        print(nn.predict(np.array([[input]]), None)[0])
+        predictions.append(nn.predict(np.array([[input]]), None)[0])
 
     # Plot the sine curve data
     plt.figure(figsize=(8, 6))

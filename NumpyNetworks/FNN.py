@@ -154,10 +154,12 @@ class FeedForwardNeuralNetwork:
         accuracy = correct_predictions / m
         return accuracy, correct_predictions
 
+x1 = np.array([[0.1,0.2,0.3,0.4,0.5]])
+y1 = np.array([[0.2,0.4,0.6,0.8,1.0]])
 
 if __name__ == "__main__":
 
-    layers_dims = [1, 2, 3, 4, 2]  # num of neurons of each layer. input-layer-1, output-layer-1. hidden-layers-20-7-5. Layer-0 is input-layer. Layer-4 is output-layer
+    layers_dims = [1, 32,5,3,2, 1]  # num of neurons of each layer. input-layer-1, output-layer-1. hidden-layers-20-7-5. Layer-0 is input-layer. Layer-4 is output-layer
     # X.shape = (n[0], m). Num of rows is number of input-neurons. Num of cols is number of examples. 
     train_x = np.array([
         [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.9, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0, 1.5, 0.5, 0.1, 0.2, 0.12, 2.3, 0.49, 2.34, 1.12, 1.26, 1.47, 0.69, 0.96, 2.4, 4.5, 6.8, 8.9, 0.2, 9.9, 8.8, 6.4, 5.9, 3.9, 2.9, 9.4, 8.3, 3.6, 9.7, 4.0, 2.6, 2.5, 6.7, 6.5, 6.6, 6.2, 5.0, 2.4, 6.1, 5.3, 3.2, 3.1, 2.1, 8.1, 8.4, 8.5, 9.1, 9.6, 6.6, 1.1, 7.5, 7.1, 7.4, 8.6, 6.8, 2.7, 7.2, 9.6, 5.4, 9.7, 3.5, 2.1, 7.7, 8.8, 4.0, 3.9, 8.5, 7.0, 1.0, 3.0, 4.0, 8.0, 9.0, 9.2, 9.4, 4.4, 3.3, 1.1, 2.2, 8.8, 7.6, 6.8]
@@ -167,8 +169,9 @@ if __name__ == "__main__":
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1],
         [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0]
     ])
-    nn = FeedForwardNeuralNetwork(train_x, train_y, layers_dims, 0.0075, 2500, multiclass_classification=True)
+    nn = FeedForwardNeuralNetwork(x1, y1, layers_dims, 0.0075, 2500, multiclass_classification=True)
     nn.train()
+    print(nn.predict(np.array([[0.4]]), None))
 
 
 """    iters = []

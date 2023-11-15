@@ -783,22 +783,36 @@ train_y = [
 ]
 
 
+x = [
+    [2.0, 3.0, 0.5, 1.0],
+    [3.0, -1.0, 1.0, 1.0], 
+    [-1.0, 0.5, 1.0, -1.0],
+]
+
+y = [
+    [1.0, -1.0, -1.0, 1.0],
+    [1.0, -1.0, -1.0, 1.0],
+]
 
 if __name__ == "__main__":
     nn = FeedForwardNeuralNetwork(train_x, train_y, layers_dims, 0.0075, 2500, l2_regularization=False, binary_classification=True, multiclass_classification=False, optimizer="gradient descent", learning_rate_decay=False, gradient_descent_variant="batch")
     nn.train()
-    #nn.check_gradients()
-    #nn.evaluate_accuracy()
-    #nn.predict([[0.1],[0.09],[0.12],[0.15]], [[0], [0]], show_preds=True)
+    nn.check_gradients()
+    nn.evaluate_accuracy()
+    nn.predict([[0.1],[0.09],[0.12],[0.15]], [[0], [0]], show_preds=True)
+    # layers_dims = [3, 5, 2]
+    # nn = FeedForwardNeuralNetwork(x, y, layers_dims, 0.0075, 500, l2_regularization=False, binary_classification=True, multiclass_classification=False, optimizer="gradient descent", learning_rate_decay=False, gradient_descent_variant="batch")
+    # nn.train()
+    # nn.predict(x, y, show_preds=True)
 
-    iters = []
-    for i in range(nn.num_iterations):
-        if i%100 == 0 or i % 100 == 0 or i == nn.num_iterations - 1:
-            iters.append(i)
-    plt.plot(iters, nn.costs, label = "Cost", color="red")
-    plt.xlim(0, 2500)
-    plt.ylim(0.68, 0.70)
-    plt.show()
+    # iters = []
+    # for i in range(nn.num_iterations):
+    #     if i%100 == 0 or i % 100 == 0 or i == nn.num_iterations - 1:
+    #         iters.append(i)
+    # plt.plot(iters, nn.costs, label = "Cost", color="red")
+    # plt.xlim(0, 2500)
+    # plt.ylim(0.68, 0.70)
+    # plt.show()
 
 
 

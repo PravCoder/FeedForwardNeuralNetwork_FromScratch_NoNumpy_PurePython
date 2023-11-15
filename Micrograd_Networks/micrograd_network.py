@@ -188,7 +188,7 @@ class MLP:
        if show_preds: print("Y-Pred: "+str(y_preds))
        return y_preds
     
-    def compute_loss(self, y_preds):
+    def compute_loss(self, y_preds, cur_iteration):
        loss_for_examples = []
        # iterate examples
        for m in range(len(self.train_y)):
@@ -203,7 +203,7 @@ class MLP:
           loss_for_examples.append(loss_for_nodes)     # add the current-example loss to a list
        
        self.loss = sum(loss_for_examples)  # sum losses for all examples
-       print("Loss: "+str(self.loss))
+       print(f'Epoch: {cur_iteration}, Loss: {self.loss}')
 
     def backward_pass(self):
       self.reset_grads()    # reset the gradients Value-obj.grad - 0
@@ -236,31 +236,13 @@ class MLP:
        # iterate every epoch
        for i in range(self.num_iterations):
           y_preds = self.forward_pass()   # call forward-pass returns predictions
-          self.compute_loss(y_preds)
+          self.compute_loss(y_preds, i)
           self.backward_pass()
           self.update_parameters()
        if show_preds: print("Y-PRED (after gradient descent): "+str(y_preds))
 
 
 
-
-def generate_sine_data(num_samples=100, noise_factor=0.1):
-    X = [random.uniform(0, 2 * math.pi) for _ in range(num_samples)]
-    Y = [math.sin(x) + random.uniform(-noise_factor, noise_factor) for x in X]
-    X = [x for x in X]
-    Y = [y for y in Y]
-    return X, Y
-
-def reformat_data(x, y):
-    train_x, train_y = [], []
-    for i, input in enumerate(x):
-        train_x.append([])
-        train_x[i].append(input)
-    for j, output in enumerate(y):
-        train_y.append([])
-        train_y[j].append(output)
-
-    return train_x, train_y
 
 def main():
     x = [                   # input-values each row is an example, each element in each row is input-value for that node in network

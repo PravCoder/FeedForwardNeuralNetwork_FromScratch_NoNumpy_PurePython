@@ -434,23 +434,3 @@ if __name__ == "__main__":
     plt.show()"""
 
 
-
-
-# NETWORK STATUS:
-# ocasionally decreases consistently
-# unpredictable behavoir
-# most of the time is approximately constant. 
-
-# Cost decreasing for always for constat weight initialzation.
-
-# NOTE:
-# - forward_prop calculations are matching paper calculations
-# - cost decreasing to 0.63 for 3-examples.
-# - majority of cost is constant for 
-# - sine surve predictions are all the same
-# - cost decreasing more times, sometimes constant.
-
-# TODO:
-# 1) compute on network on paper with constant weights and print network compuataions and compare
-# 2) Relu activation: max yields constant cost returning 0/1 yields decreasing cost.
-# 3) Constant cost with 100 examples.
