@@ -20,6 +20,7 @@ y = [1, 0, 1]
 # w[la]
 """
 
+learning_rate = 0.0075
 # activations
 def sigmoid(z):
     return 1/(math.exp(-z))
@@ -147,7 +148,7 @@ dLdW221_2 = a*b*f
 dLdW111_2 = a*b*d*i2(z112)*e
 dLdW112_2 = a*b*g*j2(z122)*h
 
-#example-3
+# example-3
 a = ((y1-y_hat1) + (y2-y_hat2) + (y3-y_hat3)) * 1/3
 b = sigmoid(z213) * (1-sigmoid(z213))
 c = a113
@@ -186,3 +187,12 @@ print("dLdW111_3: "+str(dLdW111_3)+"\n")
 
 
 # update parameters:
+dLdW111_avr = (dLdW111_1 + dLdW111_2 + dLdW111_3) * 1/3     # average gradient caluclations over all examples
+dLdW112_avr = (dLdW112_1 + dLdW112_2 + dLdW112_3) * 1/3
+dLdW211_avr = (dLdW211_1 + dLdW211_2 + dLdW211_3) * 1/3
+dLdW221_avr = (dLdW221_1 + dLdW221_2 + dLdW221_3) * 1/3
+
+w111 = w111 - (learning_rate*dLdW111_avr)   # gradient descent
+w112 = w112 - (learning_rate*dLdW112_avr)
+w211 = w211 - (learning_rate*dLdW211_avr)
+w221 = w221 - (learning_rate*dLdW221_avr)
