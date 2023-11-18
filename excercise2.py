@@ -1,4 +1,5 @@
 import math
+import matplotlib.pyplot as plt     # used to visualize the cost
 
 learning_rate = 0.0075
 # activations
@@ -96,7 +97,8 @@ def j3(z123):
         return 0
 
 # TRAINING
-def forward(a213,a212,a211,a112,x1,z123,z113,x3,a123,a113,z213,x2,a122,y3,y2,y1,z122,z112,z212,z121,z111,z211,a121,a111,y_hat1, y_hat2, y_hat3, w111, w112, w211, w221, dLdW111_avr,dLdW112_avr,dLdW211_avr,dLdW221_avr,dLdW111_1,dLdW111_2,dLdW111_3,dLdW112_1,dLdW112_2,dLdW112_3,dLdW211_1,dLdW211_2,dLdW211_3,dLdW221_1,dLdW221_2,dLdW221_3):
+def forward():
+    global a213,a212,a211,a112,x1,z123,z113,x3,a123,a113,z213,x2,a122,y3,y2,y1,z122,z112,z212,z121,z111,z211,a121,a111,y_hat1, y_hat2, y_hat3, w111, w112, w211, w221, dLdW111_avr,dLdW112_avr,dLdW211_avr,dLdW221_avr,dLdW111_1,dLdW111_2,dLdW111_3,dLdW112_1,dLdW112_2,dLdW112_3,dLdW211_1,dLdW211_2,dLdW211_3,dLdW221_1,dLdW221_2,dLdW221_3
     z111 = w111*x1 + b11
     z112 = w111*x2 + b11
     z113 = w111*x3 + b11
@@ -123,6 +125,7 @@ def forward(a213,a212,a211,a112,x1,z123,z113,x3,a123,a113,z213,x2,a122,y3,y2,y1,
     return [a211, a212, a213]
 
 def compute_loss(p1, p2, p3):
+    global a213,a212,a211,a112,x1,z123,z113,x3,a123,a113,z213,x2,a122,y3,y2,y1,z122,z112,z212,z121,z111,z211,a121,a111,y_hat1, y_hat2, y_hat3, w111, w112, w211, w221, dLdW111_avr,dLdW112_avr,dLdW211_avr,dLdW221_avr,dLdW111_1,dLdW111_2,dLdW111_3,dLdW112_1,dLdW112_2,dLdW112_3,dLdW211_1,dLdW211_2,dLdW211_3,dLdW221_1,dLdW221_2,dLdW221_3
     y_hat1 = p1
     y_hat2 = p2
     y_hat3 = p3
@@ -130,7 +133,8 @@ def compute_loss(p1, p2, p3):
     print("Loss: "+str(loss))
     return loss
 
-def backward(a213,a212,a211,a112,x1,z123,z113,x3,a123,a113,z213,x2,a122,y3,y2,y1,z122,z112,z212,z121,z111,z211,a121,a111,y_hat1, y_hat2, y_hat3, w111, w112, w211, w221, dLdW111_avr,dLdW112_avr,dLdW211_avr,dLdW221_avr,dLdW111_1,dLdW111_2,dLdW111_3,dLdW112_1,dLdW112_2,dLdW112_3,dLdW211_1,dLdW211_2,dLdW211_3,dLdW221_1,dLdW221_2,dLdW221_3):
+def backward():
+    global a213,a212,a211,a112,x1,z123,z113,x3,a123,a113,z213,x2,a122,y3,y2,y1,z122,z112,z212,z121,z111,z211,a121,a111,y_hat1, y_hat2, y_hat3, w111, w112, w211, w221, dLdW111_avr,dLdW112_avr,dLdW211_avr,dLdW221_avr,dLdW111_1,dLdW111_2,dLdW111_3,dLdW112_1,dLdW112_2,dLdW112_3,dLdW211_1,dLdW211_2,dLdW211_3,dLdW221_1,dLdW221_2,dLdW221_3
     # EXAMPLE-1
     a = ((y1-y_hat1) + (y2-y_hat2) + (y3-y_hat3)) * 1/3
     b = sigmoid(z211) * (1-sigmoid(z211))
@@ -172,7 +176,8 @@ def backward(a213,a212,a211,a112,x1,z123,z113,x3,a123,a113,z213,x2,a122,y3,y2,y1
     dLdW112_3 = a*b*g*j3(z123)*h
     return [a213,a212,a211,a112,x1,z123,z113,x3,a123,a113,z213,x2,a122,y3,y2,y1,z122,z112,z212,z121,z111,z211,a121,a111,y_hat1, y_hat2, y_hat3, w111, w112, w211, w221, dLdW111_avr,dLdW112_avr,dLdW211_avr,dLdW221_avr,dLdW111_1,dLdW111_2,dLdW111_3,dLdW112_1,dLdW112_2,dLdW112_3,dLdW211_1,dLdW211_2,dLdW211_3,dLdW221_1,dLdW221_2,dLdW221_3]
 
-def update(a213,a212,a211,a112,x1,z123,z113,x3,a123,a113,z213,x2,a122,y3,y2,y1,z122,z112,z212,z121,z111,z211,a121,a111,y_hat1, y_hat2, y_hat3, w111, w112, w211, w221, dLdW111_avr,dLdW112_avr,dLdW211_avr,dLdW221_avr,dLdW111_1,dLdW111_2,dLdW111_3,dLdW112_1,dLdW112_2,dLdW112_3,dLdW211_1,dLdW211_2,dLdW211_3,dLdW221_1,dLdW221_2,dLdW221_3):
+def update():
+    global a213,a212,a211,a112,x1,z123,z113,x3,a123,a113,z213,x2,a122,y3,y2,y1,z122,z112,z212,z121,z111,z211,a121,a111,y_hat1, y_hat2, y_hat3, w111, w112, w211, w221, dLdW111_avr,dLdW112_avr,dLdW211_avr,dLdW221_avr,dLdW111_1,dLdW111_2,dLdW111_3,dLdW112_1,dLdW112_2,dLdW112_3,dLdW211_1,dLdW211_2,dLdW211_3,dLdW221_1,dLdW221_2,dLdW221_3
     dLdW111_avr = (dLdW111_1 + dLdW111_2 + dLdW111_3) * 1/3     # average gradient caluclations over all examples
     dLdW112_avr = (dLdW112_1 + dLdW112_2 + dLdW112_3) * 1/3
     dLdW211_avr = (dLdW211_1 + dLdW211_2 + dLdW211_3) * 1/3
@@ -183,12 +188,23 @@ def update(a213,a212,a211,a112,x1,z123,z113,x3,a123,a113,z213,x2,a122,y3,y2,y1,z
     w211 = w211 - (learning_rate*dLdW211_avr)
     w221 = w221 - (learning_rate*dLdW221_avr)
 
-for _ in range(5):
-    preds = forward(a213,a212,a211,a112,x1,z123,z113,x3,a123,a113,z213,x2,a122,y3,y2,y1,z122,z112,z212,z121,z111,z211,a121,a111,y_hat1, y_hat2, y_hat3, w111, w112, w211, w221, dLdW111_avr,dLdW112_avr,dLdW211_avr,dLdW221_avr,dLdW111_1,dLdW111_2,dLdW111_3,dLdW112_1,dLdW112_2,dLdW112_3,dLdW211_1,dLdW211_2,dLdW211_3,dLdW221_1,dLdW221_2,dLdW221_3)
-    y_hat1, y_hat2, y_hat2 = preds[0], preds[1], preds[2]
-    compute_loss(y_hat1, y_hat2, y_hat3)
-    a213,a212,a211,a112,x1,z123,z113,x3,a123,a113,z213,x2,a122,y3,y2,y1,z122,z112,z212,z121,z111,z211,a121,a111,y_hat1, y_hat2, y_hat3, w111, w112, w211, w221, dLdW111_avr,dLdW112_avr,dLdW211_avr,dLdW221_avr,dLdW111_1,dLdW111_2,dLdW111_3,dLdW112_1,dLdW112_2,dLdW112_3,dLdW211_1,dLdW211_2,dLdW211_3,dLdW221_1,dLdW221_2,dLdW221_3 = backward(a213,a212,a211,a112,x1,z123,z113,x3,a123,a113,z213,x2,a122,y3,y2,y1,z122,z112,z212,z121,z111,z211,a121,a111,y_hat1, y_hat2, y_hat3, w111, w112, w211, w221, dLdW111_avr,dLdW112_avr,dLdW211_avr,dLdW221_avr,dLdW111_1,dLdW111_2,dLdW111_3,dLdW112_1,dLdW112_2,dLdW112_3,dLdW211_1,dLdW211_2,dLdW211_3,dLdW221_1,dLdW221_2,dLdW221_3)
-    update(a213,a212,a211,a112,x1,z123,z113,x3,a123,a113,z213,x2,a122,y3,y2,y1,z122,z112,z212,z121,z111,z211,a121,a111,y_hat1, y_hat2, y_hat3, w111, w112, w211, w221, dLdW111_avr,dLdW112_avr,dLdW211_avr,dLdW221_avr,dLdW111_1,dLdW111_2,dLdW111_3,dLdW112_1,dLdW112_2,dLdW112_3,dLdW211_1,dLdW211_2,dLdW211_3,dLdW221_1,dLdW221_2,dLdW221_3)
 
-# TODO;
-# - weights are not updating
+num_epochs = 100
+costs = []
+for _ in range(num_epochs):
+    preds = forward()
+    y_hat1, y_hat2, y_hat2 = preds[0], preds[1], preds[2]
+    cur_loss = compute_loss(y_hat1, y_hat2, y_hat3)
+    costs.append(cur_loss)
+    backward()
+    update()
+
+
+iters = []
+for i in range(num_epochs):
+    iters.append(i)
+plt.plot(iters, costs, label = "Cost", color="red")
+plt.xlim(0, num_epochs+20)
+plt.ylim(0.50, 0.51)
+plt.show()
+
