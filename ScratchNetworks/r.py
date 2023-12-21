@@ -22,6 +22,7 @@ def reformat_data(x, y):
 def main():
     layers_dims = [1, 10,10, 1]
     X, Y = generate_sine_data(num_samples=1000, noise_factor=0.1)
+    print(X)
     # Extract x values from X and y values from Y for plotting
     x_values = [x[0] for x in X]
     y_values = [y[0] for y in Y]

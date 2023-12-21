@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 class FeedForwardNeuralNetwork:
-    def __init__(self, X, Y, dimensions, learning_rate=1.2, num_iterations=2500, multiclass_classification=False, regression=False):
+    def __init__(self, X, Y, dimensions, learning_rate=1.2, num_iterations=2500, multiclass_classification=False, regression=False, print_cost=True):
         self.X = X
         self.Y = Y
         self.dimensions = dimensions # each element is number of nodes in that layer. Length is total number of layers. 
@@ -15,6 +15,7 @@ class FeedForwardNeuralNetwork:
         self.costs = []
         self.multiclass_classification = multiclass_classification
         self.regression = regression
+        self.print_cost = print_cost
 
     def initialize(self):
         np.random.seed(3)
@@ -50,12 +51,15 @@ class FeedForwardNeuralNetwork:
             self.cache["Z"+str(l)] = np.dot(self.params["W"+str(l)], self.cache["A"+str(l-1)]) + self.params["b"+str(l)]
             # A[l] = relu(Z[l])
             self.cache["A"+str(l)] = self.relu(self.cache["Z"+str(l)])
+
         # get index of last-output-layer. 4-indx for 5-total-layers
         l = len(self.dimensions)-1
         # Z[L] = W[L] * A[L-1] + b[L], L = index of last-output-layer
         self.cache["Z"+str(l)] = np.dot(self.params["W"+str(l)], self.cache["A"+str(l-1)]) + self.params["b"+str(l)]
+
         if self.multiclass_classification == True:
             self.cache["A"+str(l)] = self.sigmoid(self.cache["Z"+str(l)])    # A[L] = sigmoid(Z[L])
+            # print(self.params["W"+str(l)])
         if self.regression == True:     # linear activation for regression
             self.cache["A"+str(l)] = self.cache["Z"+str(l)]
 
@@ -106,8 +110,10 @@ class FeedForwardNeuralNetwork:
         # loop from 1st-hidden-layer to last-hidden-layer
         for l in range(1, len(self.dimensions)):
             # W[l] = W[l] - alpha*dW[l]
+            # print(f'before {self.params["W"+str(l)] }')
             self.params["W"+str(l)] = self.params["W"+str(l)] - self.learning_rate*self.grads["dW"+str(l)]
             self.params["b"+str(l)] = self.params["b"+str(l)] - self.learning_rate*self.grads["db"+str(l)]
+            # print(f'after {self.params["W"+str(l)]}')
 
     def train(self):
         np.random.seed(1)
@@ -121,7 +127,7 @@ class FeedForwardNeuralNetwork:
             self.backward_propagation()
             self.update_parameters()
             if i % 100 == 0 or i == self.num_iterations - 1:
-                print('Cost after {} iterations is {}'.format(i, self.cost))
+                if self.print_cost: print('Cost after {} iterations is {}'.format(i, self.cost))
                 self.costs.append(self.cost)
 
     def predict(self, X, outputs=[]):

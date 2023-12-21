@@ -27,7 +27,7 @@ def main_fit_curve():
     # format data-x by hvaing eahc example in its own list and add that list to hte big list, format data-y by again adding the y-values to 1D-list
     train_x, train_y = reformat_data(rawX, rawY)
 
-    n = MLP(len(train_x[0]), [32, 1], -0.001, train_x, train_y, num_iterations=2500) # 0.001
+    n = MLP(len(train_x[0]), [32, 1], -0.001, train_x, train_y, num_iterations=700) # 0.001
 
     n.train()
 

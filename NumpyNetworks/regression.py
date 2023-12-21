@@ -4,13 +4,13 @@ import random
 import matplotlib.pyplot as plt 
 from FNN import *
 
-
 def generate_sine_data(num_samples=100, noise_factor=0.1):
     X = [random.uniform(0, 2 * math.pi) for _ in range(num_samples)]
     Y = [math.sin(x) + random.uniform(-noise_factor, noise_factor) for x in X]
     X = [[x] for x in X]
     Y = [[y] for y in Y]
     return X, Y
+
 def reformat_data(x, y):
     train_x, train_y = [[]], [[]]
     for input in x:
@@ -23,7 +23,6 @@ def reformat_data(x, y):
     return train_x, train_y
     
     
-
 def main():
     layers_dims = [1, 32, 1]
     X, Y = generate_sine_data(num_samples=50, noise_factor=0.1)

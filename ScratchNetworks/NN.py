@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt     # used to visualize the cost
 import copy     # used as 2nd check so that the data of a object is copied and not its reference
 
 class FeedForwardNeuralNetwork:
-    def __init__(self, X, Y, dimensions, learning_rate=0.0075, num_iterations=3000, binary_classification=False, multiclass_classification=False, regression=False, optimizer="gradient descent", learning_rate_decay=False, gradient_descent_variant="batch"):
+    def __init__(self, X, Y, dimensions, learning_rate=0.0075, num_iterations=2500, binary_classification=False, multiclass_classification=False, regression=False, optimizer="gradient descent", learning_rate_decay=False, gradient_descent_variant="batch"):
         self.X = X      # x-training data
         self.Y = Y      # y-training data
         self.saved_X = self.X
@@ -61,7 +61,7 @@ class FeedForwardNeuralNetwork:
                 self.W[l].append([])
                 for next in range(self.dimensions[l]):    
                     # float(np.random.randn() *0.01))
-                    self.W[l][prev].append(np.random.randn() *0.01) # UNCOMMENT THIS! 0.018230189162016477
+                    self.W[l][prev].append(0.018230189162016477) # UNCOMMENT THIS! 0.018230189162016477
             for _ in range(self.dimensions[l]):     
                 self.b[l].append(0)
 
@@ -106,20 +106,23 @@ class FeedForwardNeuralNetwork:
         #self.show_shapes(self.dA, "dA")
 
     def forward_propagation(self, predict=False, show_predictions=False, acutal_y=None):        # computes the weighted sum and activations for each node in network
-        for m in range(self.m):
-            for cur in range(self.dimensions[0]):
+        
+        for cur in range(self.dimensions[0]):
+            for m in range(self.m):
+                print(self.X[cur][m])
                 self.A[0][cur][m] = self.X[cur][m]
         for l in range(1, len(self.dimensions)):
-            for m in range(self.m):
-                for cur in range(self.dimensions[l]):
+            for cur in range(self.dimensions[l]):
+                for m in range(self.m):
+                
                     self.Z[l][cur][m] = 0
                     for prev in range(self.dimensions[l - 1]):
                         self.Z[l][cur][m] += self.W[l][prev][cur] * self.A[l - 1][prev][m] 
                     self.Z[l][cur][m] += + self.b[l][cur]
                     self.A[l][cur][m] = self.relu_single(self.Z[l][cur][m])
         L = len(self.dimensions) - 1
-        for m in range(self.m):
-            for cur in range(self.dimensions[L]):
+        for cur in range(self.dimensions[L]):
+            for m in range(self.m):
                 for prev in range(self.dimensions[L - 1]):
                     self.Z[L][cur][m] += self.W[L][prev][cur] * self.A[L - 1][prev][m] 
                 self.Z[L][cur][m] += self.b[L][cur]
@@ -229,8 +232,9 @@ class FeedForwardNeuralNetwork:
             for cur in range(self.dimensions[l]):
                 self.db[l].append(0)
 
-        for m in range(self.m):
-            for cur in range(self.dimensions[L]):
+        for cur in range(self.dimensions[L]):
+            for m in range(self.m):
+            
                 y = self.Y[cur][m]
                 al = self.A[L][cur][m]
                 self.dA[L][cur][m] = -((y / al) - ((1 - y) / (1 - al)))
@@ -262,16 +266,24 @@ class FeedForwardNeuralNetwork:
 
         # AVERAGE GRADIENTS
         for l in range(len(self.dimensions) - 1, 0, -1):
-            for cur in range(self.dimensions[l]):
-                for prev_node in range(self.dimensions[l - 1]):
+            for prev_node in range(self.dimensions[l - 1]):
+                for cur in range(self.dimensions[l]):
+                
                     self.dW[l][prev_node][cur] /= self.m
                 self.db[l][cur] /= self.m
 
     def update_parameters_gradient_descent(self):
         for l in range(1, len(self.dimensions)):
-            for cur in range(self.dimensions[l]):
-                for prev in range(self.dimensions[l-1]):
+            for prev in range(self.dimensions[l-1]):
+                for cur in range(self.dimensions[l]):
+                    # PARAMETER UPDATE
+                    # print(f'before {self.W[l][prev][cur] }')
+                    # b = self.W[l][prev][cur]
                     self.W[l][prev][cur] = self.W[l][prev][cur] - (self.learning_rate * self.dW[l][prev][cur])
+                    # print(f'after {self.W[l][prev][cur] }')
+                    # a = self.W[l][prev][cur]
+                    # print(str(b==a) +"\n")
+                    # PARAMETER UPDATE
                 self.b[l][cur] = self.b[l][cur] - (self.learning_rate * self.b[l][cur])
                 
     def predict(self, x, y=[], show_preds=False): 
@@ -397,7 +409,7 @@ layers_dims = [4, 2, 1]  # num of neurons of each layer
 train_y = [
     [0, 1, 0],
 ]"""
-train_x = [
+"""train_x = [
     [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.9, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0, 1.5, 0.5, 0.1, 0.2, 0.12, 2.3, 0.49, 2.34, 1.12, 1.26, 1.47, 0.69, 0.96, 2.4, 4.5, 6.8, 8.9, 0.2, 9.9, 8.8, 6.4, 5.9, 3.9, 2.9, 9.4, 8.3, 3.6, 9.7, 4.0, 2.6, 2.5, 6.7, 6.5, 6.6, 6.2, 5.0, 2.4, 6.1, 5.3, 3.2, 3.1, 2.1, 8.1, 8.4, 8.5, 9.1, 9.6, 6.6, 1.1, 7.5, 7.1, 7.4, 8.6, 6.8, 2.7, 7.2, 9.6, 5.4, 9.7, 3.5, 2.1, 7.7, 8.8, 4.0, 3.9, 8.5, 7.0, 1.0, 3.0, 4.0, 8.0, 9.0, 9.2, 9.4, 4.4, 3.3, 1.1, 2.2, 8.8, 7.6, 6.8],
     [0.09, 0.19, 0.28, 0.37, 0.51, 0.64, 0.75, 0.83, 1.05, 1.12, 1.24, 1.33, 1.44, 1.52, 1.66, 1.73, 1.82, 1.96, 2.01, 1.52, 0.52, 0.08, 0.19, 0.11, 2.27, 0.47, 2.31, 1.16, 1.29, 1.37, 0.60, 0.91, 2.26, 4.43, 6.65, 8.81, 0.18, 9.74, 8.72, 6.29, 5.86, 3.81, 2.85, 9.41, 8.23, 3.58, 9.68, 3.95, 2.51, 2.49, 6.61, 6.46, 6.60, 6.07, 4.94, 2.32, 6.03, 5.31, 3.11, 3.09, 1.97, 8.06, 8.38, 8.40, 9.04, 9.53, 6.46, 1.02, 7.47, 7.00, 7.42, 8.47, 6.72, 2.68, 7.16, 9.57, 5.47, 9.78, 3.44, 1.99, 7.70, 8.82, 3.95, 3.88, 8.40, 7.09, 0.98, 2.90, 3.95, 8.06, 8.98, 9.19, 9.48, 4.35, 3.23, 1.00, 2.15, 8.68, 7.48, 6.64],
     [0.12, 0.21, 0.35, 0.42, 0.54, 0.61, 0.78, 0.85, 1.02, 1.14, 1.28, 1.30, 1.42, 1.59, 1.68, 1.78, 1.85, 1.92, 2.06, 1.45, 0.46, 0.13, 0.26, 0.18, 2.32, 0.55, 2.39, 1.18, 1.23, 1.42, 0.67, 0.87, 2.44, 4.59, 6.70, 8.94, 0.27, 9.89, 8.77, 6.47, 5.91, 3.92, 2.88, 9.49, 8.32, 3.64, 9.78, 4.12, 2.68, 2.58, 6.72, 6.51, 6.68, 6.18, 4.96, 2.42, 6.12, 5.33, 3.24, 3.18, 2.08, 8.19, 8.45, 8.57, 9.10, 9.63, 6.73, 1.12, 7.53, 7.16, 7.54, 8.63, 6.86, 2.78, 7.26, 9.69, 5.65, 9.89, 3.65, 2.16, 7.77, 8.91, 4.18, 3.98, 8.60, 7.05, 1.10, 3.12, 4.16, 8.16, 9.03, 9.25, 9.58, 4.47, 3.38, 1.16, 2.23, 8.88, 7.68, 6.81],
@@ -406,31 +418,12 @@ train_x = [
 # each row represents outputs for each output node, each element in a row are all the example output values for that output node. To get all of the outputs for a specific example use that same index in each row
 train_y = [
     [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1],
-]
+]"""
 
+
+train_x = [[0.1, 0.2, 0.3]]
+train_y = [[0,1,0]]
 
 if __name__ == "__main__":
     nn = FeedForwardNeuralNetwork(train_x, train_y, layers_dims, 0.0075, 2500, binary_classification=True)
     nn.train()
-    """for l in range(1, len(nn.dimensions)):
-        print("LAYER: " + str(l))
-        for cur in range(nn.dimensions[l]):
-            for m in range(nn.m):  # Z[node][example]
-                print("Z["+str(cur+1)+"]"+"["+str(m+1)+"]: "+str(nn.Z[l][cur][m]))
-    print("\n")
-    for l in range(1, len(nn.dimensions)):
-        print("LAYER: " + str(l))
-        for cur in range(nn.dimensions[l]):
-            for m in range(nn.m):  # Z[node][example]
-                print("A["+str(cur+1)+"]"+"["+str(m+1)+"]: "+str(nn.A[l][cur][m]))"""
-    
-    """iters = []
-    for i in range(nn.num_iterations):
-        if i%100 == 0 or i % 100 == 0 or i == nn.num_iterations - 1:
-            iters.append(i)
-    plt.plot(iters, nn.costs, label = "Cost", color="red")
-    plt.xlim(0, 2500)
-    plt.ylim(0.68, 0.70)
-    plt.show()"""
-
-

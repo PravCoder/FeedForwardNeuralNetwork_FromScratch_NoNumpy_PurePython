@@ -1,18 +1,18 @@
 import math
 import matplotlib.pyplot as plt     # used to visualize the cost
 
-learning_rate = 0.0075
+learning_rate = 0.05
 # activations
 def sigmoid(z):
     return 1/(math.exp(-z))
 # input dataset
-x1 = 0.1
-x2 = 0.2
-x3 = 0.3
+x1 = 1
+x2 = 2
+x3 = 3
 # output dataset
-y1 = 1
-y2 = 0
-y3 = 1
+y1 = 0
+y2 = 1
+y3 = 0
 # initalize parameters
 w111 = 0.018230189162016477
 w112 = 0.018230189162016477
@@ -119,9 +119,9 @@ def forward():
     z211 = (w211*a111 + w221*a121) + b21
     z212 = (w211*a112 + w221*a122) + b21
     z213 = (w211*a113 + w221+a123) + b21
-    a211 = 1 / (1+math.e**(-z211))
-    a212 = 1 / (1+math.e**(-z212))
-    a213 = 1 / (1+math.e**(-z213))
+    a211 = sigmoid(z211)
+    a212 = sigmoid(z212)
+    a213 = sigmoid(z213)
     return [a211, a212, a213]
 
 def compute_loss(p1, p2, p3):
@@ -189,7 +189,7 @@ def update():
     w221 = w221 - (learning_rate*dLdW221_avr)
 
 
-num_epochs = 100
+num_epochs = 1000
 costs = []
 for _ in range(num_epochs):
     preds = forward()
@@ -199,12 +199,11 @@ for _ in range(num_epochs):
     backward()
     update()
 
-
 iters = []
 for i in range(num_epochs):
     iters.append(i)
 plt.plot(iters, costs, label = "Cost", color="red")
 plt.xlim(0, num_epochs+20)
-plt.ylim(0.50, 0.51)
+plt.ylim(0.35 ,0.352)
 plt.show()
 

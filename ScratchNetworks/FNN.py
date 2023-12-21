@@ -524,7 +524,9 @@ class FeedForwardNeuralNetwork:
             for n in range(self.dimensions[l]):
                 for prev_node in range(self.dimensions[l-1]):
                     if self.l2_regularization == True:      
+                        print(f'before {self.W[l][prev_node][n] }')
                         self.W[l][prev_node][n] = self.W[l][prev_node][n] - self.reg_term(self.W[l],(self.learning_rate*self.lambd)/self.m, l)[prev_node][n] - self.reg_term(self.dW[l],self.learning_rate, l)[prev_node][n]
+                        print(f'after {self.W[l][prev_node][n] }')
                     else:
                         self.W[l][prev_node][n] = self.W[l][prev_node][n]  - (self.learning_rate*self.dW[l][prev_node][n])
                 self.b[l][n]  = self.b[l][n]  - (self.learning_rate*self.db[l][n])
@@ -795,7 +797,7 @@ y = [
 ]
 
 if __name__ == "__main__":
-    nn = FeedForwardNeuralNetwork(train_x, train_y, layers_dims, 0.0075, 2500, l2_regularization=False, binary_classification=True, multiclass_classification=False, optimizer="gradient descent", learning_rate_decay=False, gradient_descent_variant="batch")
+    nn = FeedForwardNeuralNetwork(train_x, train_y, layers_dims, 0.0075, 1, l2_regularization=False, binary_classification=True, multiclass_classification=False, optimizer="gradient descent", learning_rate_decay=False, gradient_descent_variant="batch")
     nn.train()
     nn.check_gradients()
     nn.evaluate_accuracy()
