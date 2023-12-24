@@ -116,7 +116,7 @@ class FeedForwardNeuralNetwork:
                 for m in range(self.m):
                 
                     self.Z[l][cur][m] = 0
-                    for prev in range(self.dimensions[l - 1]):
+                    for prev in range(self.dimensions[l - 1]): # NOT GETTING INPUTS FOR 1ST LAYER PREVIOUS IS 0TH-INPUT-LAYER
                         self.Z[l][cur][m] += self.W[l][prev][cur] * self.A[l - 1][prev][m] 
                     self.Z[l][cur][m] += + self.b[l][cur]
                     self.A[l][cur][m] = self.relu_single(self.Z[l][cur][m])

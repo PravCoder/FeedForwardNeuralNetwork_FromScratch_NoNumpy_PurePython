@@ -5,6 +5,10 @@ def sigmoid(z):
     return 1 / (1+math.exp(-z))
 def d_sigmoid(z):
     return z * (1-z)
+def relu(z):
+    return max(0, z)
+def d_relu(z):
+    return 1 if z > 0 else 0
 def init_weight():
     return random.uniform(-1, 1)
 
@@ -105,10 +109,11 @@ def main():
 
             # apply change in output-weights
             for j in range(num_outputs):
-                output_layer_bias[j] = deltaOutput[j] * lr
+                output_layer_bias[j] += deltaOutput[j] * lr
                 for k in range(num_hidden_nodes):
                     output_weights[k][j] += hidden_layer[k] * deltaOutput[j] * lr
 
+            # apply change in hidden-weights
             for j in range(num_hidden_nodes):
                 hidden_layer_bias[j] += deltaHidden[j] * lr
                 for k in range(num_inputs):
@@ -129,5 +134,19 @@ Hidden Layers: 1 with 2 nodes
 Output nodes: 1
 
 
+Performs worst with sigmoid for output-layer and relu for hidden-layer.
 
+
+TODO: Dynamic class that supports any number of hidden layers & sizes, any input/output-layer size:
+- Store activations for each hidden layer & output layer
+- Store weights/bias for all hidden layers
+- Store gradients of weights/bias for all hidden layers & output-layer, deltaOutput/deltaHidden
+- Initalize weights/bias for all hidden layers & output-layer
+- Initalize gradients of weights/bias for all hidden layers & output-layer
+- Forward pass: iterate each hidden layer and compute that layers activation, compute  output-layer-activation.
+- Backward pass: compute & store change in each output-weights
+- Update: apply change in output-weights, iterate each hidden-layer and apply change.
+- Experiment with different cost functions
+
+- Normal GD, update parameters after computing all examples, need to loop through examples within forward/backward and average.
 """
