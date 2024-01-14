@@ -1,5 +1,6 @@
 import math
 import random
+import numpy as np
 
 
 class Net:
@@ -20,7 +21,7 @@ class Net:
         return random.uniform(-1, 1)
     
     def sigmoid(self, z):
-        return 1 / (1+math.exp(-z))
+        return 1 / (1+np.exp(-z))
     def d_sigmoid(self, z):
         return z * (1-z)
     def relu(self, z):
@@ -112,7 +113,8 @@ class Net:
 
     def predict(self, example):
         last_layer = len(self.dimensions)-1
-        print(f'Input: {self.train_x[example]}   Output: {self.activations[last_layer][0]}   Expected: {self.train_y[example]}')
+        # print(f'Input: {self.train_x[example]}   Output: {self.activations[last_layer][0]}   Expected: {self.train_y[example]}')
+        print(f'Output: {self.activations[last_layer][0]}   Expected: {self.train_y[example]}')
 
     def model(self):
         """
@@ -130,35 +132,40 @@ class Net:
         self.init_gradients_weights_bias()
         for epoch in range(self.epochs):
             for example in range(len(self.train_x)):
-                self.forward_pass(example)    # SGD: pass each example at a time and update parameters
+                self.forward_pass(example)    # SGD: pass each example one at a time and update parameters
                 
-                self.predict(example)
+                
                 
                 self.backward_pass(example)
                 self.update(example)
+        # after training forward pass and predict each example
+        for example in range(len(self.train_x)):
+            self.forward_pass(example)
+            self.predict(example)
 
 
-
-# CREATE MODEL
-train_x = [[0.0, 0.0], 
-            [1.0, 0.0],
-            [0.0, 1.0],
-            [1.0, 1.0]]
-train_y = [[0.0], 
-        [1.0],
-        [1.0],
-        [0.0]]
-dimensions = [2, 10,10, 1]
-nn = Net(train_x, train_y, dimensions, 0.1, 10000)
-nn.model()
+if __name__ == "__main__":
+    # CREATE MODEL
+    train_x = [[0.0, 0.0], 
+                [1.0, 0.0],
+                [0.0, 1.0],
+                [1.0, 1.0]]
+    train_y = [[0.0], 
+            [1.0],
+            [1.0],
+            [0.0]]
+    dimensions = [2, 10,10, 1]
+    nn = Net(train_x, train_y, dimensions, 0.1, 10000)
+    nn.model()
 
 
 """
-[DONE] Replicate tutorial but with dynamic layers
-[TBD] Noramal GD Instead of stochastic GD
-[TBD] Different cost functions how that will affect backprop
-[TBD] Different activations and their derivatives in backprop
-
+[DONE]: Dynamic layers
+[DONE]: Binary classification
+[TBD]: Noramal GD Instead of stochastic GD, so pass all of the examples at once then update
+[TBD]: Different cost functions how that will affect backprop
+[TBD]: Different activations and their derivatives in backprop
+[TBD]: Check for last layer different activation
 
 https://sebastianraschka.com/faq/docs/gradient-optimization.html
 
