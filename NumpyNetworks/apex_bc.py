@@ -30,6 +30,6 @@ def process_data():
 if __name__ == "__main__":
     dimensions = [30, 10, 10, 5, 1]
     train_x, train_y = process_data()
-    nn = Net(train_x, train_y, dimensions, 0.1, 100)
+    nn = Net(train_x, train_y, dimensions, 0.075, 50)
     nn.model()
 

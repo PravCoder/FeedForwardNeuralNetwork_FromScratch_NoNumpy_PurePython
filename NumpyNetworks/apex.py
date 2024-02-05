@@ -64,6 +64,7 @@ class Net:
                     activation = self.bias[layer_indx][cur_node]
                     for input_node in range(self.dimensions[layer_indx-1]):
                         activation += self.train_x[example][input_node] * self.weights[layer_indx][input_node][cur_node]
+                    # INPUT LAYER
                     self.activations[layer_indx][cur_node] = self.sigmoid(activation)
 
             if layer_indx != 1:
@@ -71,8 +72,13 @@ class Net:
                     activation = self.bias[layer_indx][cur_node]
                     for prev_node in range(self.dimensions[layer_indx-1]):
                         activation += self.activations[layer_indx-1][prev_node] * self.weights[layer_indx][prev_node][cur_node]
-                    # TBD: Check for last layer different activation
-                    self.activations[layer_indx][cur_node] = self.sigmoid(activation)
+                    # LAST LAYER
+                    if layer_indx == len(self.dimensions)-1:
+                        self.activations[layer_indx][cur_node] = self.sigmoid(activation)
+                    # NOT LAST LAYER
+                    else:
+                        self.activations[layer_indx][cur_node] = self.sigmoid(activation)
+
         # print("\nforward pass")
         # print(f'activations: {self.activations}')
 
@@ -114,6 +120,7 @@ class Net:
     def predict(self, example):
         last_layer = len(self.dimensions)-1
         # print(f'Input: {self.train_x[example]}   Output: {self.activations[last_layer][0]}   Expected: {self.train_y[example]}')
+        
         print(f'Output: {self.activations[last_layer][0]}   Expected: {self.train_y[example]}')
 
     def model(self):
@@ -132,13 +139,13 @@ class Net:
         self.init_gradients_weights_bias()
         for epoch in range(self.epochs):
             for example in range(len(self.train_x)):
-                self.forward_pass(example)    # SGD: pass each example one at a time and update parameters
-                
-                
-                
+                self.forward_pass(example)    # SGD: pass each example one at a time and update parameter
                 self.backward_pass(example)
                 self.update(example)
+
         # after training forward pass and predict each example
+        print("Iterations: "+ str(self.epochs))
+        print("Examples")
         for example in range(len(self.train_x)):
             self.forward_pass(example)
             self.predict(example)
@@ -154,8 +161,8 @@ if __name__ == "__main__":
             [1.0],
             [1.0],
             [0.0]]
-    dimensions = [2, 10,10, 1]
-    nn = Net(train_x, train_y, dimensions, 0.1, 10000)
+    dimensions = [2, 10, 1]
+    nn = Net(train_x, train_y, dimensions, 0.2, 1000)
     nn.model()
 
 

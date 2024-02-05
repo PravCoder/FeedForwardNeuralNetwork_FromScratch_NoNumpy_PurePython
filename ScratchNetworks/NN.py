@@ -109,7 +109,6 @@ class FeedForwardNeuralNetwork:
         
         for cur in range(self.dimensions[0]):
             for m in range(self.m):
-                print(self.X[cur][m])
                 self.A[0][cur][m] = self.X[cur][m]
         for l in range(1, len(self.dimensions)):
             for cur in range(self.dimensions[l]):
@@ -399,7 +398,7 @@ class FeedForwardNeuralNetwork:
                 self.costs.append(self.cost)
 
 # STATUS: Increasing cost for single/multiple output neurons possible due to incorrect backprop implementation and cost function.
-layers_dims = [4, 2, 1]  # num of neurons of each layer
+layers_dims = [1, 2, 1]  # num of neurons of each layer
 
 # each row represents inputs for each input node, each element in a row are all the example input values for that input node. To get all of the inputs for a specific example use that same index in each row
 """train_x = [

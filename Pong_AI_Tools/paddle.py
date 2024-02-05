@@ -44,8 +44,9 @@ class Paddle:
     def predict_movement(self, bally, paddley):
 
         # FNN.PY Network Classification
-        inputs = [[bally], [paddley]]
-        pred_i, predictions = self.neural_network.predict(inputs, [[0],[0]])
+        inputs = [[bally, paddley]]
+        p = self.neural_network.predict(inputs)
+        print(p)
         #print("preds: " +str(predictions))
         if pred_i == 1 and self.rect.y - self.vel > 0:
             self.rect.y -= self.vel
@@ -55,9 +56,10 @@ class Paddle:
 
     def predict_movement_6(self, ballY, paddleY, distance): 
         # FNN.PY Network Classification
-        inputs = [[ballY], [paddleY], [distance]]
-        pred_i, predictions = self.neural_network.predict(inputs, [[0],[0]])
-
+        inputs = [[ballY, paddleY, distance]]
+        p = self.neural_network.predict(inputs)  # [[0.9888227  0.99515714]]
+        pred_i = list(p[0]).index(max(p[0]))
+        print(p)
         if pred_i == 1 and self.rect.y - self.vel > 0:
             self.rect.y -= self.vel
         if pred_i == 0 and self.rect.y + self.vel + self.rect.height < self.screen_height:
@@ -74,7 +76,6 @@ class Paddle:
     def predict_movement_micrograd(self, ballX, ballY):
         inputs = [[ballX, ballY]]
         y_preds = self.neural_network.predict(inputs)
-        print("Predictions: "+str(y_preds))
         
 
     def draw(self, win):
