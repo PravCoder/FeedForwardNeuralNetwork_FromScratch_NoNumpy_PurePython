@@ -146,21 +146,21 @@ class Optimizers:
             self.beta = beta
             self.name = "Momentum"
 
-        def configure(self, W, b, layers):
+        def configure(self, W, b, VdW, Vdb, layers):
             VdW = []
             Vdb = []
             for layer in range(len(layers)):
                 VdW.append(np.zeros(W[layer].shape))
                 Vdb.append(np.zeros(b[layer].shape))
-            return VdW, Vdb
+            return W, b, VdW, Vdb
 
         def update(self, W, b, VdW, Vdb, layers, grad):
             for layer in range(len(layers)):
-                VdW[layer] = self.beta * W[layer] + (1 - self.beta) * grad[layer]["dW"]  # update velocties
-                Vdb[layer] = self.beta * b[layer] + (1 - self.beta) * grad[layer]["db"]
+                VdW[layer] = self.beta * VdW[layer] + (1 - self.beta) * grad[layer]["dW"]  # fix: use VdW[layer] instead of W[layer]
+                Vdb[layer] = self.beta * Vdb[layer] + (1 - self.beta) * grad[layer]["db"]  # fix: use Vdb[layer] instead of b[layer]
 
-                W[layer] -= self.learning_rate * W[layer]  # update weights
-                b[layer] -= self.learning_rate * b[layer]
+                W[layer] -= self.learning_rate * VdW[layer]
+                b[layer] -= self.learning_rate * Vdb[layer]
 
             return W, b, VdW, Vdb
 
@@ -184,7 +184,10 @@ class NeuralNetwork:
         self.optimizer = optimizer
         self.initialize_weights_biases(input_size)
 
-        self.W, self.b = self.optimizer.configure(self.W, self.b, self.layers)  # add some stuff to parameters
+        if self.optimizer.name == "SGD": 
+            self.W, self.b = self.optimizer.configure(self.W, self.b, self.layers)  # add some stuff to parameters
+        if self.optimizer.name == "Momentum":
+            self.W, self.b, self.VdW, self.Vdb = self.optimizer.configure(self.W, self.b, self.VdW, self.Vdb, self.layers)  # add some stuff to parameters
         
 
     def train(self, X, Y, epochs, learning_rate=0.001, batch_size=None, print_cost=True):
@@ -204,7 +207,10 @@ class NeuralNetwork:
 
                 grad = self.backward(AL, y)  # get gradients, grad = [{'dW': dW, 'db': db}, {}, {}], each dictionary is for a layer
 
-                self.W, self.b = self.optimizer.update(self.W, self.b, self.layers, grad)
+                if self.optimizer.name == "SGD":
+                    self.W, self.b = self.optimizer.update(self.W, self.b, self.layers, grad)
+                if self.optimizer.name == "Momentum":
+                    self.W, self.b, self.VdW, self.Vdb = self.optimizer.update(self.W, self.b, self.VdW, self.Vdb, self.layers, grad)
                 
                 self.costs.append(cost)
 
@@ -280,7 +286,7 @@ if __name__ == "__main__":
     model.add(Layer(num_nodes=10, activation=ReLU(), initializer=Initializers.glorot_uniform))
     model.add(Layer(num_nodes=1, activation=Linear(), initializer=Initializers.glorot_uniform))
 
-    model.setup(cost_func=Loss.MSE, input_size=1, optimizer=Optimizers.SGD(learning_rate=0.01))
+    model.setup(cost_func=Loss.MSE, input_size=1, optimizer=Optimizers.Momentum(learning_rate=0.01))
 
     model.train(X_train, Y_train, epochs=5000, learning_rate=0.01, batch_size=num_samples)
 
