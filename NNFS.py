@@ -147,11 +147,11 @@ class Optimizers:
         def configure(self, W, b, layers):
             return W, b
 
-        def update(self, W, b, layers, grad):
+        def update(self, W, b, dW, db, layers):
             for layer in range(len(layers)):        # iterate through each layer
                 
-                W[layer] -= self.learning_rate * grad[layer]['dW']      # update weights of cur-layer using learning-rate and gradient of weights/biases
-                b[layer] -= self.learning_rate * grad[layer]['db']      # grad is dictionary
+                W[layer] -= self.learning_rate * dW[layer]     # update weights of cur-layer using learning-rate and gradient of weights/biases
+                b[layer] -= self.learning_rate * db[layer]    # grad is dictionary
 
             return W, b
         
@@ -169,10 +169,10 @@ class Optimizers:
                 Vdb.append(np.zeros(b[layer].shape))
             return W, b, VdW, Vdb
 
-        def update(self, W, b, VdW, Vdb, layers, grad):
+        def update(self, W, b, dW, db, VdW, Vdb, layers):
             for layer in range(len(layers)):        # iterate each layer-indx and update velocites using beta-HPP
-                VdW[layer] = self.beta * VdW[layer] + (1 - self.beta) * grad[layer]["dW"]  
-                Vdb[layer] = self.beta * Vdb[layer] + (1 - self.beta) * grad[layer]["db"]  
+                VdW[layer] = self.beta * VdW[layer] + (1 - self.beta) * dW[layer] 
+                Vdb[layer] = self.beta * Vdb[layer] + (1 - self.beta) * db[layer]
 
                 W[layer] -= self.learning_rate * VdW[layer]
                 b[layer] -= self.learning_rate * Vdb[layer]
@@ -208,6 +208,8 @@ class NeuralNetwork:
         # self.parameters = []  # params = [{W:matrix, b:matrix}, {}], index each dictionary by layer-index and then its keys, layer -> W -> matrix
         self.W = []  # each element is a matrix for that index-layer
         self.b = []
+        self.dW = []
+        self.db = []
         self.VdW = []   # stores velocties for each layer
         self.Vdb = []
         self.SdW = []
@@ -247,12 +249,12 @@ class NeuralNetwork:
 
                 cost = self.cost_func.forward(AL, y)  # compute cost
 
-                grad = self.backward(AL, y)  # get gradients, grad = [{'dW': dW, 'db': db}, {}, {}], each dictionary is for a layer
+                self.backward(AL, y)  # get gradients, grad = [{'dW': dW, 'db': db}, {}, {}], each dictionary is for a layer
 
                 if self.optimizer.name == "SGD":
-                    self.W, self.b = self.optimizer.update(self.W, self.b, self.layers, grad)
+                    self.W, self.b = self.optimizer.update(self.W, self.b, self.dW, self.db, self.layers)
                 if self.optimizer.name == "Momentum":
-                    self.W, self.b, self.VdW, self.Vdb = self.optimizer.update(self.W, self.b, self.VdW, self.Vdb, self.layers, grad)
+                    self.W, self.b, self.VdW, self.Vdb = self.optimizer.update(self.W, self.b, self.dW, self.db, self.VdW, self.Vdb, self.layers)
                 
                 self.costs.append(cost)
 
@@ -284,9 +286,10 @@ class NeuralNetwork:
         return A
 
     def backward(self, AL, Y):
-        grad = []
+        self.dW, self.db = [], []       # reset and initalize grads after every iteration 0 for every grad matrix
         for _ in range(len(self.layers)):
-            grad.append(0)
+            self.dW.append(0)
+            self.db.append(0)
 
         # derivative of prev-layer activations given prediction-matrix and reshaped labes
         dA_prev = self.cost_func.backward(AL, Y.reshape(AL.shape))
@@ -297,9 +300,11 @@ class NeuralNetwork:
 
             dA_prev, dW, db = self.layers[layer_indx].backward(dA_prev, **cache)
 
-            grad[layer_indx] = {'dW': dW, 'db': db}
+            
+            self.dW[layer_indx] = dW
+            self.db[layer_indx] = db
 
-        return grad
+        return None
 
     def predict(self, X):
         return self.forward(X)
