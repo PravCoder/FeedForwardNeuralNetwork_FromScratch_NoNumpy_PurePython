@@ -3,26 +3,29 @@ import matplotlib.pyplot as plt
 
 
 def initialize_parameters(prev_layer_size, layer_size, initializer):
-    W_layer = initializer(prev_layer_size, layer_size)
-    b_layer = np.zeros((1, layer_size))
+    W_layer = initializer(prev_layer_size, layer_size)    # call initalizer function
+    b_layer = np.zeros((1, layer_size))     # a single column of zeros for biases because each node in cur-layer has bias
     W_layer, b_layer
     return W_layer, b_layer
 
 class Layer:
+    """
+    Representation of a layer. Stores number of nodes, activation object, initializer function.
+    """
     def __init__(self, num_nodes, activation, initializer):
         self.num_nodes = num_nodes
         self.activation = activation
         self.initializer = initializer
 
-    def forward(self, A_prev, W, b):
+    def forward(self, A_prev, W, b):    # given activations for previous layer and weights and bias of current layer
         # print(A_prev)
         # print("\n")
         # print(W)
-        Z = np.dot(A_prev, W) + b
-        A = self.activation.forward(Z)
-        return A, Z
+        Z = np.dot(A_prev, W) + b       # compute weighted-sum
+        A = self.activation.forward(Z)  # activation-obj.forward(weighted-sum)
+        return A, Z                     # return activations and weighted-sum of current-layer
 
-    def backward(self, dA, A_prev, W, b, Z):
+    def backward(self, dA, A_prev, W, b, Z):    
         m = A_prev.shape[0]
         dZ = self.activation.backward(Z, dA)
         dW = 1 / m * np.dot(A_prev.T, dZ)
@@ -32,12 +35,14 @@ class Layer:
 
 # Base-class interface
 class LinearActivation:
+    """
+    Different activation functions both forward (given weighted sum) and backward (derivative)
+    """
     def forward(self, Z):
         pass
 
     def backward(self, Z, dA=1):
         pass
-
 class Linear(LinearActivation):
     def forward(self, Z):
         return Z
@@ -63,7 +68,11 @@ class ReLU(LinearActivation):
         return dA * dZ
 
 class Initializers:
-
+    """
+    Given the previous layer size and current layer size
+    return a specific initlized weight matrix using formulsa
+    """
+    
     @staticmethod
     def normal(prev_layer_size, layer_size):
         return np.random.randn(prev_layer_size, layer_size)
@@ -91,6 +100,10 @@ class Initializers:
         return np.random.uniform(-limit, limit, (prev_layer_size, layer_size))
 
 class Loss:
+    """
+    Each cost function has a class which contains a forward method which computes the cost given predictions and labels. 
+    Backward method is the derivative of that cost function. 
+    """
 
     class BinaryCrossEntropy:
 
@@ -123,8 +136,10 @@ class Loss:
             return -2 * (Y - AL)
 
 class Optimizers:
-
-    class SGD:
+    """
+    Each class is a different optimizer. Which has a update method that updates/returns the parameters.
+    """
+    class SGD:  # stochastic gradient descent
         def __init__(self, learning_rate=0.001):
             self.learning_rate = learning_rate
             self.name = "SGD"
@@ -133,10 +148,10 @@ class Optimizers:
             return W, b
 
         def update(self, W, b, layers, grad):
-            for layer in range(len(layers)):
+            for layer in range(len(layers)):        # iterate through each layer
                 
-                W[layer] -= self.learning_rate * grad[layer]['dW']
-                b[layer] -= self.learning_rate * grad[layer]['db']
+                W[layer] -= self.learning_rate * grad[layer]['dW']      # update weights of cur-layer using learning-rate and gradient of weights/biases
+                b[layer] -= self.learning_rate * grad[layer]['db']      # grad is dictionary
 
             return W, b
         
@@ -149,15 +164,15 @@ class Optimizers:
         def configure(self, W, b, VdW, Vdb, layers):
             VdW = []
             Vdb = []
-            for layer in range(len(layers)):
+            for layer in range(len(layers)):        # iterate thourgh eachlayer and initalize veloctiy of cur-layer to that same shape as parameters of cur-layer
                 VdW.append(np.zeros(W[layer].shape))
                 Vdb.append(np.zeros(b[layer].shape))
             return W, b, VdW, Vdb
 
         def update(self, W, b, VdW, Vdb, layers, grad):
-            for layer in range(len(layers)):
-                VdW[layer] = self.beta * VdW[layer] + (1 - self.beta) * grad[layer]["dW"]  # fix: use VdW[layer] instead of W[layer]
-                Vdb[layer] = self.beta * Vdb[layer] + (1 - self.beta) * grad[layer]["db"]  # fix: use Vdb[layer] instead of b[layer]
+            for layer in range(len(layers)):        # iterate each layer-indx and update velocites using beta-HPP
+                VdW[layer] = self.beta * VdW[layer] + (1 - self.beta) * grad[layer]["dW"]  
+                Vdb[layer] = self.beta * Vdb[layer] + (1 - self.beta) * grad[layer]["db"]  
 
                 W[layer] -= self.learning_rate * VdW[layer]
                 b[layer] -= self.learning_rate * Vdb[layer]
@@ -180,10 +195,11 @@ class NeuralNetwork:
         self.layers.append(layer)
 
     def setup(self, cost_func, input_size, optimizer):
-        self.cost_func = cost_func
-        self.optimizer = optimizer
+        self.cost_func = cost_func  # set cost function 
+        self.optimizer = optimizer  # set optimizer function
         self.initialize_weights_biases(input_size)
 
+        # check for all optimization methods and initlize parameters
         if self.optimizer.name == "SGD": 
             self.W, self.b = self.optimizer.configure(self.W, self.b, self.layers)  # add some stuff to parameters
         if self.optimizer.name == "Momentum":
@@ -194,7 +210,7 @@ class NeuralNetwork:
         
         self.optimizer.learning_rate = learning_rate
 
-        num_examples = X.shape[0]
+        num_examples = X.shape[0]       # number of examples
         
 
         for i in range(1, epochs + 1):
@@ -202,7 +218,9 @@ class NeuralNetwork:
             y_batches = np.array_split(Y, num_examples // batch_size, axis=0)
 
             for x, y in zip(x_batches, y_batches):
+                
                 AL = self.forward(x)                  # feed x-data through network
+
                 cost = self.cost_func.forward(AL, y)  # compute cost
 
                 grad = self.backward(AL, y)  # get gradients, grad = [{'dW': dW, 'db': db}, {}, {}], each dictionary is for a layer
@@ -229,13 +247,14 @@ class NeuralNetwork:
             self.b.append(b_layer)
 
 
-    def forward(self, A):
+    def forward(self, A): # given activations which are x-inputs
         self.caches = []
-
+        # iterate through each layer-indx
         for layer in range(len(self.layers)):
-            A_prev = A
+            A_prev = A  # store cur-activation as previous-activataion
+            # layers-arr[layer-indx] call forward function passing in activations and parameters of cur-layer
             A, Z = self.layers[layer].forward(A_prev, self.W[layer], self.b[layer])
-
+            # store previous-activations, weights, biases, and weighted-sum in cache
             self.caches.append({'A_prev': A_prev,"W": self.W[layer], "b": self.b[layer], "Z": Z})
 
         return A
@@ -245,14 +264,16 @@ class NeuralNetwork:
         for _ in range(len(self.layers)):
             grad.append(0)
 
+        # derivative of prev-layer activations given prediction-matrix and reshaped labes
         dA_prev = self.cost_func.backward(AL, Y.reshape(AL.shape))
 
-        for layer in reversed(range(len(self.layers))):
-            cache = self.caches[layer]
+        # iterate thorugh layers backward
+        for layer_indx in reversed(range(len(self.layers))):
+            cache = self.caches[layer_indx]  # current cache of layer 
 
-            dA_prev, dW, db = self.layers[layer].backward(dA_prev, **cache)
+            dA_prev, dW, db = self.layers[layer_indx].backward(dA_prev, **cache)
 
-            grad[layer] = {'dW': dW, 'db': db}
+            grad[layer_indx] = {'dW': dW, 'db': db}
 
         return grad
 

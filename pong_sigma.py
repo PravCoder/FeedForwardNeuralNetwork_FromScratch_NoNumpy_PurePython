@@ -4,7 +4,7 @@ from Pong_AI_Tools.paddle import Paddle
 from Pong_AI_Tools.ball import Ball
 import numpy as np
 
-from neural_network import NeuralNetwork, Layer, LinearActivation, ReLU, Sigmoid,Initializers,Optimizers, Loss,NeuralNetwork
+from NNFS import NeuralNetwork, Layer, LinearActivation, ReLU, Sigmoid,Initializers,Optimizers, Loss,NeuralNetwork
 
 from datasets.sigma_pong_data import train_x, train_y
 import math
@@ -71,12 +71,12 @@ def main():
     model.add(Layer(num_nodes=5, activation=ReLU(), initializer=Initializers.glorot_uniform))
     model.add(Layer(num_nodes=2, activation=Sigmoid(), initializer=Initializers.glorot_uniform))
     model.setup(cost_func=Loss.CategoricalCrossEntropy, input_size=3, optimizer=Optimizers.SGD(learning_rate=0.01))
-    model.train(np.array(train_x), np.array(train_y), epochs=5000, learning_rate=0.01, batch_size=len(train_x))
+    # model.train(np.array(train_x), np.array(train_y), epochs=5000, learning_rate=0.01, batch_size=len(train_x))
 
     paddle1 = Paddle(10, 150, WIDTH, HEIGHT, "L", 5, BLACK, "neural_network")
     paddle2 = Paddle(10, 150, WIDTH, HEIGHT, "R", 5, WHITE, model)
     ball = Ball(30, 30, WIDTH, HEIGHT, GREEN)
-    collect_game_data = False    # TRUE to collect data
+    collect_game_data = True    # TRUE to collect data
     game_inputs =  []
     game_outputs = []
     current_streak = 0
@@ -84,7 +84,10 @@ def main():
 
     clock = pygame.time.Clock()
     run = True
+    i = 0
+    timestep = 500
     while run:
+        i+=1
         clock.tick(FPS)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -110,13 +113,13 @@ def main():
         # MOVE BALL CONSTANTLY
         ball.update_position()
 
-        if collect_game_data == True: # ballY paddleY distance
+        if collect_game_data == True and  i % timestep == 0: # ballY paddleY distance
             example = [ball.rect.y/100,paddle1.rect.y/100,  calculate_distance(ball, paddle2)]
             game_inputs.append(example)
 
 
 
-        if collect_game_data == True:
+        if collect_game_data == True and  i % timestep == 0:
             label = []
             if paddle2.status == "up":
                 label.append(1)
