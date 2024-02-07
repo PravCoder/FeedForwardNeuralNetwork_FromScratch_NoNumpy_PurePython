@@ -156,6 +156,7 @@ class Optimizers:
             return W, b
         
     class Momentum:
+        
         def __init__(self, learning_rate=0.01, beta=0.9):
             self.learning_rate = learning_rate
             self.beta = beta
@@ -184,20 +185,25 @@ class Optimizers:
         def __init__(self, learning_rate=0.01, beta=0.9):
             self.learning_rate = learning_rate
             self.beta = beta
+            self.name = "RMS_Prop"
+            self.epsilon = 1e-9
 
         def configure(self, W, b, SdW, Sdb, layers):
             SdW = []
             Sdb = []
-            for layer_indx in range(layers):
-                SdW.append(np.zeros(W[layer_indx].shape))
-                Sdb.append(np.zeros(W[layer_indx].shape))
-
-        def update(self, W, b, SdW, Sdb, layers, grad):
             for layer_indx in range(len(layers)):
-                SdW[layer_indx] = self.beta*SdW[layer_indx] + (1-self.beta)*((grad[layer_indx]["dW"])**2)
-                Sdb[layer_indx] = self.beta*Sdb[layer_indx] + (1-self.beta)*((grad[layer_indx]["db"])**2)
+                SdW.append(np.zeros(W[layer_indx].shape))
+                Sdb.append(np.zeros(b[layer_indx].shape))
+            return W, b, SdW, Sdb
 
-                W[layer_indx] -= self.leanring_rate * (grad[layer_indx]["dW"])
+        def update(self, W, b, dW, db, SdW, Sdb, layers):
+            for layer_indx in range(len(layers)):
+                SdW[layer_indx] = self.beta*SdW[layer_indx] + (1-self.beta)*(dW[layer_indx]**2)
+                Sdb[layer_indx] = self.beta*Sdb[layer_indx] + (1-self.beta)*(db[layer_indx]**2)
+
+                W[layer_indx] -= self.learning_rate * (dW[layer_indx] / np.sqrt(SdW[layer_indx] + self.epsilon))
+                b[layer_indx] -= self.learning_rate * (db[layer_indx] / np.sqrt(Sdb[layer_indx] + self.epsilon))
+            return W, b, SdW, Sdb
 
 
 
@@ -230,6 +236,8 @@ class NeuralNetwork:
             self.W, self.b = self.optimizer.configure(self.W, self.b, self.layers)  # add some stuff to parameters
         if self.optimizer.name == "Momentum":
             self.W, self.b, self.VdW, self.Vdb = self.optimizer.configure(self.W, self.b, self.VdW, self.Vdb, self.layers)  # add some stuff to parameters
+        if self.optimizer.name == "RMS_Prop":
+            self.W, self.b, self.SdW, self.Sdb = self.optimizer.configure(self.W, self.b, self.SdW, self.Sdb, self.layers)
         
 
     def train(self, X, Y, epochs, learning_rate=0.001, batch_size=None, print_cost=True):
@@ -255,6 +263,8 @@ class NeuralNetwork:
                     self.W, self.b = self.optimizer.update(self.W, self.b, self.dW, self.db, self.layers)
                 if self.optimizer.name == "Momentum":
                     self.W, self.b, self.VdW, self.Vdb = self.optimizer.update(self.W, self.b, self.dW, self.db, self.VdW, self.Vdb, self.layers)
+                if self.optimizer.name == "RMS_Prop":
+                    self.W, self.b, self.SdW, self.Sdb = self.optimizer.update(self.W, self.b, self.dW, self.db, self.SdW, self.Sdb, self.layers)
                 
                 self.costs.append(cost)
 
@@ -267,7 +277,7 @@ class NeuralNetwork:
             layer_sizes.append(layer.num_nodes)
 
         self.W, self.b = [], []
-        for layer_indx in range(len(layer_sizes) - 1):
+        for layer_indx in range(len(layer_sizes) - 1):  # for every layer-indx excluding input-layer
             W_layer, b_layer = initialize_parameters(layer_sizes[layer_indx], layer_sizes[layer_indx + 1], self.layers[layer_indx].initializer)
             self.W.append(W_layer)
             self.b.append(b_layer)
@@ -336,7 +346,7 @@ if __name__ == "__main__":
     model.add(Layer(num_nodes=10, activation=ReLU(), initializer=Initializers.glorot_uniform))
     model.add(Layer(num_nodes=1, activation=Linear(), initializer=Initializers.glorot_uniform))
 
-    model.setup(cost_func=Loss.MSE, input_size=1, optimizer=Optimizers.Momentum(learning_rate=0.01))
+    model.setup(cost_func=Loss.MSE, input_size=1, optimizer=Optimizers.RMS_Prop(learning_rate=0.01))
 
     model.train(X_train, Y_train, epochs=5000, learning_rate=0.01, batch_size=num_samples)
 
