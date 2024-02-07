@@ -162,7 +162,7 @@ class Optimizers:
             self.name = "Momentum"
 
         def configure(self, W, b, VdW, Vdb, layers):
-            VdW = []
+            VdW = []        
             Vdb = []
             for layer in range(len(layers)):        # iterate thourgh eachlayer and initalize veloctiy of cur-layer to that same shape as parameters of cur-layer
                 VdW.append(np.zeros(W[layer].shape))
@@ -178,6 +178,28 @@ class Optimizers:
                 b[layer] -= self.learning_rate * Vdb[layer]
 
             return W, b, VdW, Vdb
+        
+    class RMS_Prop:
+
+        def __init__(self, learning_rate=0.01, beta=0.9):
+            self.learning_rate = learning_rate
+            self.beta = beta
+
+        def configure(self, W, b, SdW, Sdb, layers):
+            SdW = []
+            Sdb = []
+            for layer_indx in range(layers):
+                SdW.append(np.zeros(W[layer_indx].shape))
+                Sdb.append(np.zeros(W[layer_indx].shape))
+
+        def update(self, W, b, SdW, Sdb, layers, grad):
+            for layer_indx in range(len(layers)):
+                SdW[layer_indx] = self.beta*SdW[layer_indx] + (1-self.beta)*((grad[layer_indx]["dW"])**2)
+                Sdb[layer_indx] = self.beta*Sdb[layer_indx] + (1-self.beta)*((grad[layer_indx]["db"])**2)
+
+                W[layer_indx] -= self.leanring_rate * (grad[layer_indx]["dW"])
+
+
 
 class NeuralNetwork:
 
@@ -186,8 +208,10 @@ class NeuralNetwork:
         # self.parameters = []  # params = [{W:matrix, b:matrix}, {}], index each dictionary by layer-index and then its keys, layer -> W -> matrix
         self.W = []  # each element is a matrix for that index-layer
         self.b = []
-        self.VdW = []
+        self.VdW = []   # stores velocties for each layer
         self.Vdb = []
+        self.SdW = []
+        self.Sdb = []
         self.caches = []   # params = [{dW:matrix, db:matrix}, {}], Each item is a dictionary with the 'A_prev', 'W', 'b', and 'Z' values for the layer - Used in backprop
         self.costs = []
 

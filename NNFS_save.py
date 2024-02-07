@@ -3,26 +3,29 @@ import matplotlib.pyplot as plt
 
 
 def initialize_parameters(prev_layer_size, layer_size, initializer):
-    W_layer = initializer(prev_layer_size, layer_size)
-    b_layer = np.zeros((1, layer_size))
+    W_layer = initializer(prev_layer_size, layer_size)    # call initalizer function
+    b_layer = np.zeros((1, layer_size))     # a single column of zeros for biases because each node in cur-layer has bias
     W_layer, b_layer
     return W_layer, b_layer
 
 class Layer:
+    """
+    Representation of a layer. Stores number of nodes, activation object, initializer function.
+    """
     def __init__(self, num_nodes, activation, initializer):
         self.num_nodes = num_nodes
         self.activation = activation
         self.initializer = initializer
 
-    def forward(self, A_prev, W, b):
+    def forward(self, A_prev, W, b):    # given activations for previous layer and weights and bias of current layer
         # print(A_prev)
         # print("\n")
         # print(W)
-        Z = np.dot(A_prev, W) + b
-        A = self.activation.forward(Z)
-        return A, Z
+        Z = np.dot(A_prev, W) + b       # compute weighted-sum
+        A = self.activation.forward(Z)  # activation-obj.forward(weighted-sum)
+        return A, Z                     # return activations and weighted-sum of current-layer
 
-    def backward(self, dA, A_prev, W, b, Z):
+    def backward(self, dA, A_prev, W, b, Z):    
         m = A_prev.shape[0]
         dZ = self.activation.backward(Z, dA)
         dW = 1 / m * np.dot(A_prev.T, dZ)
@@ -32,12 +35,14 @@ class Layer:
 
 # Base-class interface
 class LinearActivation:
+    """
+    Different activation functions both forward (given weighted sum) and backward (derivative)
+    """
     def forward(self, Z):
         pass
 
     def backward(self, Z, dA=1):
         pass
-
 class Linear(LinearActivation):
     def forward(self, Z):
         return Z
@@ -63,7 +68,11 @@ class ReLU(LinearActivation):
         return dA * dZ
 
 class Initializers:
-
+    """
+    Given the previous layer size and current layer size
+    return a specific initlized weight matrix using formulsa
+    """
+    
     @staticmethod
     def normal(prev_layer_size, layer_size):
         return np.random.randn(prev_layer_size, layer_size)
@@ -91,6 +100,10 @@ class Initializers:
         return np.random.uniform(-limit, limit, (prev_layer_size, layer_size))
 
 class Loss:
+    """
+    Each cost function has a class which contains a forward method which computes the cost given predictions and labels. 
+    Backward method is the derivative of that cost function. 
+    """
 
     class BinaryCrossEntropy:
 
@@ -123,8 +136,10 @@ class Loss:
             return -2 * (Y - AL)
 
 class Optimizers:
-
-    class SGD:
+    """
+    Each class is a different optimizer. Which has a update method that updates/returns the parameters.
+    """
+    class SGD:  # stochastic gradient descent
         def __init__(self, learning_rate=0.001):
             self.learning_rate = learning_rate
             self.name = "SGD"
@@ -132,11 +147,11 @@ class Optimizers:
         def configure(self, W, b, layers):
             return W, b
 
-        def update(self, W, b, layers, grad):
-            for layer in range(len(layers)):
+        def update(self, W, b, dW, db, layers):
+            for layer in range(len(layers)):        # iterate through each layer
                 
-                W[layer] -= self.learning_rate * grad[layer]['dW']
-                b[layer] -= self.learning_rate * grad[layer]['db']
+                W[layer] -= self.learning_rate * dW[layer]     # update weights of cur-layer using learning-rate and gradient of weights/biases
+                b[layer] -= self.learning_rate * db[layer]    # grad is dictionary
 
             return W, b
         
@@ -147,22 +162,44 @@ class Optimizers:
             self.name = "Momentum"
 
         def configure(self, W, b, VdW, Vdb, layers):
-            VdW = []
+            VdW = []        
             Vdb = []
-            for layer in range(len(layers)):
+            for layer in range(len(layers)):        # iterate thourgh eachlayer and initalize veloctiy of cur-layer to that same shape as parameters of cur-layer
                 VdW.append(np.zeros(W[layer].shape))
                 Vdb.append(np.zeros(b[layer].shape))
             return W, b, VdW, Vdb
 
         def update(self, W, b, VdW, Vdb, layers, grad):
-            for layer in range(len(layers)):
-                VdW[layer] = self.beta * VdW[layer] + (1 - self.beta) * grad[layer]["dW"]  # fix: use VdW[layer] instead of W[layer]
-                Vdb[layer] = self.beta * Vdb[layer] + (1 - self.beta) * grad[layer]["db"]  # fix: use Vdb[layer] instead of b[layer]
+            for layer in range(len(layers)):        # iterate each layer-indx and update velocites using beta-HPP
+                VdW[layer] = self.beta * VdW[layer] + (1 - self.beta) * grad[layer]["dW"]  
+                Vdb[layer] = self.beta * Vdb[layer] + (1 - self.beta) * grad[layer]["db"]  
 
                 W[layer] -= self.learning_rate * VdW[layer]
                 b[layer] -= self.learning_rate * Vdb[layer]
 
             return W, b, VdW, Vdb
+        
+    class RMS_Prop:
+
+        def __init__(self, learning_rate=0.01, beta=0.9):
+            self.learning_rate = learning_rate
+            self.beta = beta
+
+        def configure(self, W, b, SdW, Sdb, layers):
+            SdW = []
+            Sdb = []
+            for layer_indx in range(layers):
+                SdW.append(np.zeros(W[layer_indx].shape))
+                Sdb.append(np.zeros(W[layer_indx].shape))
+
+        def update(self, W, b, SdW, Sdb, layers, grad):
+            for layer_indx in range(len(layers)):
+                SdW[layer_indx] = self.beta*SdW[layer_indx] + (1-self.beta)*((grad[layer_indx]["dW"])**2)
+                Sdb[layer_indx] = self.beta*Sdb[layer_indx] + (1-self.beta)*((grad[layer_indx]["db"])**2)
+
+                W[layer_indx] -= self.leanring_rate * (grad[layer_indx]["dW"])
+
+
 
 class NeuralNetwork:
 
@@ -171,8 +208,12 @@ class NeuralNetwork:
         # self.parameters = []  # params = [{W:matrix, b:matrix}, {}], index each dictionary by layer-index and then its keys, layer -> W -> matrix
         self.W = []  # each element is a matrix for that index-layer
         self.b = []
-        self.VdW = []
+        self.dW = []
+        self.db = []
+        self.VdW = []   # stores velocties for each layer
         self.Vdb = []
+        self.SdW = []
+        self.Sdb = []
         self.caches = []   # params = [{dW:matrix, db:matrix}, {}], Each item is a dictionary with the 'A_prev', 'W', 'b', and 'Z' values for the layer - Used in backprop
         self.costs = []
 
@@ -180,18 +221,22 @@ class NeuralNetwork:
         self.layers.append(layer)
 
     def setup(self, cost_func, input_size, optimizer):
-        self.cost_func = cost_func
-        self.optimizer = optimizer
+        self.cost_func = cost_func  # set cost function 
+        self.optimizer = optimizer  # set optimizer function
         self.initialize_weights_biases(input_size)
 
-        self.W, self.b, self.VdW, self.Vdb = self.optimizer.configure(self.W, self.b, self.VdW, self.Vdb, self.layers)  # add some stuff to parameters
+        # check for all optimization methods and initlize parameters
+        if self.optimizer.name == "SGD": 
+            self.W, self.b = self.optimizer.configure(self.W, self.b, self.layers)  # add some stuff to parameters
+        if self.optimizer.name == "Momentum":
+            self.W, self.b, self.VdW, self.Vdb = self.optimizer.configure(self.W, self.b, self.VdW, self.Vdb, self.layers)  # add some stuff to parameters
         
 
     def train(self, X, Y, epochs, learning_rate=0.001, batch_size=None, print_cost=True):
         
         self.optimizer.learning_rate = learning_rate
 
-        num_examples = X.shape[0]
+        num_examples = X.shape[0]       # number of examples
         
 
         for i in range(1, epochs + 1):
@@ -199,19 +244,19 @@ class NeuralNetwork:
             y_batches = np.array_split(Y, num_examples // batch_size, axis=0)
 
             for x, y in zip(x_batches, y_batches):
+                
                 AL = self.forward(x)                  # feed x-data through network
+
                 cost = self.cost_func.forward(AL, y)  # compute cost
 
-                grad = self.backward(AL, y)  # get gradients, grad = [{'dW': dW, 'db': db}, {}, {}], each dictionary is for a layer
+                self.backward(AL, y)  # get gradients, grad = [{'dW': dW, 'db': db}, {}, {}], each dictionary is for a layer
 
-                # old = self.W
-
-                self.W, self.b, self.VdW, self.Vdb = self.optimizer.update(self.W, self.b, self.VdW, self.Vdb, self.layers, grad)
-
-                # print(f'old: {old[0]}')
-                # print(f'new: {self.W[0]}')
-
-                self.costs.append(cost) 
+                if self.optimizer.name == "SGD":
+                    self.W, self.b = self.optimizer.update(self.W, self.b, self.dW, self.db, self.layers)
+                # if self.optimizer.name == "Momentum":
+                #     self.W, self.b, self.VdW, self.Vdb = self.optimizer.update(self.W, self.b, self.VdW, self.Vdb, self.layers, grad)
+                
+                self.costs.append(cost)
 
             if print_cost and i%100 == 0:
                 print(f"Cost on epoch {i}: {round(cost.item(), 5)}")
@@ -228,32 +273,39 @@ class NeuralNetwork:
             self.b.append(b_layer)
 
 
-    def forward(self, A):
+    def forward(self, A): # given activations which are x-inputs
         self.caches = []
-
+        # iterate through each layer-indx
         for layer in range(len(self.layers)):
-            A_prev = A
+            A_prev = A  # store cur-activation as previous-activataion
+            # layers-arr[layer-indx] call forward function passing in activations and parameters of cur-layer
             A, Z = self.layers[layer].forward(A_prev, self.W[layer], self.b[layer])
-
+            # store previous-activations, weights, biases, and weighted-sum in cache
             self.caches.append({'A_prev': A_prev,"W": self.W[layer], "b": self.b[layer], "Z": Z})
 
         return A
 
     def backward(self, AL, Y):
-        grad = []
+        self.dW, self.db = [], []
         for _ in range(len(self.layers)):
-            grad.append(0)
+            self.dW.append(0)
+            self.db.append(0)
 
+        # derivative of prev-layer activations given prediction-matrix and reshaped labes
         dA_prev = self.cost_func.backward(AL, Y.reshape(AL.shape))
 
-        for layer in reversed(range(len(self.layers))):
-            cache = self.caches[layer]
+        # iterate thorugh layers backward
+        for layer_indx in reversed(range(len(self.layers))):
+            cache = self.caches[layer_indx]  # current cache of layer 
 
-            dA_prev, dW, db = self.layers[layer].backward(dA_prev, **cache)
+            dA_prev, dW, db = self.layers[layer_indx].backward(dA_prev, **cache)
 
-            grad[layer] = {'dW': dW, 'db': db}
+            # grad[layer_indx] = {'dW': dW, 'db': db}
+            
+            self.dW[layer_indx] = dW
+            self.db[layer_indx] = db
 
-        return grad
+        return None
 
     def predict(self, X):
         return self.forward(X)
@@ -285,7 +337,7 @@ if __name__ == "__main__":
     model.add(Layer(num_nodes=10, activation=ReLU(), initializer=Initializers.glorot_uniform))
     model.add(Layer(num_nodes=1, activation=Linear(), initializer=Initializers.glorot_uniform))
 
-    model.setup(cost_func=Loss.MSE, input_size=1, optimizer=Optimizers.Momentum(learning_rate=0.01))
+    model.setup(cost_func=Loss.MSE, input_size=1, optimizer=Optimizers.SGD(learning_rate=0.01))
 
     model.train(X_train, Y_train, epochs=5000, learning_rate=0.01, batch_size=num_samples)
 
