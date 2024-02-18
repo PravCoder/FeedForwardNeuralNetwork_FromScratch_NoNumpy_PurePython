@@ -282,7 +282,7 @@ class NeuralNetwork:
 
         num_examples = X.shape[0]       # number of examples
         
-
+        # MAIN LOOP
         for i in range(1, epochs + 1):
             x_batches = np.array_split(X, num_examples // batch_size, axis=0)
             y_batches = np.array_split(Y, num_examples // batch_size, axis=0)
@@ -350,7 +350,7 @@ class NeuralNetwork:
             dA_prev, dW, db = self.layers[layer_indx].backward(dA_prev, **cache)
 
             
-            self.dW[layer_indx] = dW
+            self.dW[layer_indx] = dW # set the graidnets of cur-layer equal to matrix
             self.db[layer_indx] = db
 
         return None
