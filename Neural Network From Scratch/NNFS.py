@@ -156,7 +156,7 @@ class Optimizers:
             return W, b
         
     class Momentum:
-        
+
         def __init__(self, learning_rate=0.01, beta=0.9):
             self.learning_rate = learning_rate
             self.beta = beta
@@ -204,6 +204,40 @@ class Optimizers:
                 W[layer_indx] -= self.learning_rate * (dW[layer_indx] / np.sqrt(SdW[layer_indx] + self.epsilon))
                 b[layer_indx] -= self.learning_rate * (db[layer_indx] / np.sqrt(Sdb[layer_indx] + self.epsilon))
             return W, b, SdW, Sdb
+        
+    class Adam:
+
+        def __init__(self, learning_rate=0.01, beta1=0.9, beta2=0.999):
+            self.leanring_rate = learning_rate
+            self.beta1 = beta1  # momentum beta
+            self.beta2 = beta2  # RMS beta
+            self.epsilon = 1e-9
+            self.name = "Adam"
+
+        def configure(self, W, b, VdW, SdW, Vdb, Sdb, layers):
+            VdW = []
+            Vdb = []
+            SdW = []
+            Sdb = []
+            for layer_indx in range(len(layers)):
+                VdW.append(np.zeros(W[layer_indx].shape))
+                Vdb.append(np.zeros(b[layer_indx].shape))
+                SdW.append(np.zeros(W[layer_indx].shape))
+                Sdb.append(np.zeros(b[layer_indx].shape))
+            return W, b, VdW, Vdb, SdW, Sdb
+
+        def update(self, W, b, dW, db, VdW, SdW, Vdb, Sdb, layers):
+            for layer_indx in range(len(layers)):
+                VdW[layer_indx] = self.beta1 * VdW[layer_indx] + (1 - self.beta1) * dW[layer_indx] # Update weight velocities
+                Vdb[layer_indx] = self.beta1 * Vdb[layer_indx] + (1 - self.beta1) * db[layer_indx] # Update bias velocities
+                SdW[layer_indx] = self.beta2 * SdW[layer_indx] + (1 - self.beta2) * np.square(dW[layer_indx]) # Update weight LR scalers
+                Sdb[layer_indx] = self.beta2 * Sdb[layer_indx] + (1 - self.beta2) * np.square(db[layer_indx]) # Update bias LR scalers
+                
+                W[layer_indx] -= self.learning_rate * VdW[layer_indx] / (np.sqrt(SdW[layer_indx]) + self.epsilon) # Update weights
+                b[layer_indx] -= self.learning_rate * Vdb[layer_indx] / (np.sqrt(Sdb[layer_indx]) + self.epsilon) # Update biases
+                
+            return W, b, dW, db, VdW, SdW, Vdb, Sdb
+
 
 
 
@@ -238,6 +272,8 @@ class NeuralNetwork:
             self.W, self.b, self.VdW, self.Vdb = self.optimizer.configure(self.W, self.b, self.VdW, self.Vdb, self.layers)  # add some stuff to parameters
         if self.optimizer.name == "RMS_Prop":
             self.W, self.b, self.SdW, self.Sdb = self.optimizer.configure(self.W, self.b, self.SdW, self.Sdb, self.layers)
+        if self.optimizer.name == "Adam":
+            self.W, self.b, self.VdW, self.Vdb, self.SdW, self.Sdb = self.optimizer.configure(self.W, self.b, self.VdW, self.SdW, self.Vdb, self.Sdb, self.layers)
         
 
     def train(self, X, Y, epochs, learning_rate=0.001, batch_size=None, print_cost=True):
@@ -265,7 +301,10 @@ class NeuralNetwork:
                     self.W, self.b, self.VdW, self.Vdb = self.optimizer.update(self.W, self.b, self.dW, self.db, self.VdW, self.Vdb, self.layers)
                 if self.optimizer.name == "RMS_Prop":
                     self.W, self.b, self.SdW, self.Sdb = self.optimizer.update(self.W, self.b, self.dW, self.db, self.SdW, self.Sdb, self.layers)
+                if self.optimizer.name == "Adam":
+                    self.W, self.b, self.dW, self.db, self.VdW, self.SdW, self.Vdb, self.Sdb = self.optimizer.update(self.W, self.b, self.dW, self.db, self.VdW, self.SdW, self.Vdb, self.Sdb, self.layers)
                 
+
                 self.costs.append(cost)
 
             if print_cost and i%100 == 0:
@@ -346,7 +385,7 @@ if __name__ == "__main__":
     model.add(Layer(num_nodes=10, activation=ReLU(), initializer=Initializers.glorot_uniform))
     model.add(Layer(num_nodes=1, activation=Linear(), initializer=Initializers.glorot_uniform))
 
-    model.setup(cost_func=Loss.MSE, input_size=1, optimizer=Optimizers.RMS_Prop(learning_rate=0.01))
+    model.setup(cost_func=Loss.MSE, input_size=1, optimizer=Optimizers.Adam(learning_rate=0.01))
 
     model.train(X_train, Y_train, epochs=5000, learning_rate=0.01, batch_size=num_samples)
 
