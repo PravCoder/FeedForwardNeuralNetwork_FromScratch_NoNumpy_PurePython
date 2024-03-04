@@ -37,9 +37,11 @@ def preprocess_data(all_students, feature_names, output_labels): # convertrs lis
 
     for i, student in enumerate(all_students):
         for j, feature_name in enumerate(feature_names):
+            # get ith-student-matrix and jth feature of cur-student and set it equal to the feature value
             X_train[i, j] = student.data.get(feature_name, 0)  # Use 0 as default if feature_name is not present
 
         for k, output_label in enumerate(output_labels):
+            # get the ith student-matrix in output and kth output-node and set it equal to the output-label value
             Y_train[i, k] = student.data.get(output_label, 0)  # Use 0 as default if output_label is not present
 
     return X_train, Y_train
@@ -74,12 +76,12 @@ def main():
     X_train, Y_train = preprocess_data(Student.all_students, feature_names, output_labels)
     model = NeuralNetwork()
 
+    # Regression Model (the G3 value numeric output between 0 and 20)
     model.add(Layer(num_nodes=64, activation=ReLU(), initializer=Initializers.glorot_uniform))
     model.add(Layer(num_nodes=1, activation=Linear(), initializer=Initializers.glorot_uniform))
-
-    
-    model.setup(cost_func=Loss.MSE, input_size=len(feature_names), optimizer=Optimizers.SGD(learning_rate=0.01))
+    model.setup(cost_func=Loss.RMSE, input_size=len(feature_names), optimizer=Optimizers.SGD(learning_rate=0.01))
     model.train(X_train, Y_train, epochs=5000, learning_rate=0.01, batch_size=len(Student.all_students))
+
 
     Y_pred = model.predict(X_train)
 

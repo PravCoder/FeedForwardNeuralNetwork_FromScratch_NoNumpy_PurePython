@@ -26,7 +26,7 @@ class Layer:
         return A, Z                     # return activations and weighted-sum of current-layer
 
     def backward(self, dA, A_prev, W, b, Z):    
-        m = A_prev.shape[0]
+        m = A_prev.shape[0]  # number of examples is the length of first index of activation-prev-layer
         dZ = self.activation.backward(Z, dA)
         dW = 1 / m * np.dot(A_prev.T, dZ)
         db = 1 / m * np.sum(dZ, axis=0, keepdims=True)
@@ -47,7 +47,7 @@ class Linear(LinearActivation):
     def forward(self, Z):
         return Z
 
-    def backward(self, Z, dA=1):
+    def backward(self, Z, dA=1): # derivative of linear-activation is just the derivative of activations. 
         return dA
 
 class Sigmoid(LinearActivation):
@@ -134,6 +134,18 @@ class Loss:
         @staticmethod
         def backward(AL, Y):
             return -2 * (Y - AL)
+        
+    class RMSE:
+
+        @staticmethod
+        def forward(AL, Y):
+            return np.sqrt(np.mean(np.square(Y - AL)))
+
+        @staticmethod
+        def backward(AL, Y):
+            m = Y.shape[0]
+            return (1 / m) * (AL - Y) / np.sqrt(np.mean(np.square(AL - Y)) + 1e-8)
+        
 
 class Optimizers:
     """
