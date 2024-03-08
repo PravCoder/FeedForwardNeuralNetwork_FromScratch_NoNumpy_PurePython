@@ -420,8 +420,8 @@ if __name__ == "__main__":
     # model.save("NeuralNetworkFromScratch/sample.json")
     # model.load("NeuralNetworkFromScratch/sample.json")
 
-    Y_pred = model.predict(X_train)
-    print(Y_pred)
+    Y_pred = model.predict(X_train)  # [e1, e2, e3, e4], e4 = [n1, n2, n3]
+    print(Y_pred[0])  # oth example
 
 
     """
