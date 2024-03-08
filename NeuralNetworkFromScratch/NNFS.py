@@ -372,18 +372,18 @@ class NeuralNetwork:
 
     # SAVE LOAD MODEL FUNCTIONS
     def save(self, file_path):
-        json_params = []
-        for layer_indx in range(len(self.layers)):
-            json_params.append({"W":self.W[layer_indx].tolist(), "b":self.b[layer_indx].tolist()})
+        json_params = [] # [{W-layer-1:[], b-layer-1:[]}]
+        for layer_indx in range(len(self.layers)):  # iterate through every layer-indx with 0th-layer being the 1st-hiddeen-layer
+            json_params.append({"W":self.W[layer_indx].tolist(), "b":self.b[layer_indx].tolist()})  # add a dictionary of weights/biases of cur-layer, convert to list first
 
         json_object = json.dumps(json_params, indent=4)
-        with open(file_path, "w") as outfile:
+        with open(file_path, "w") as outfile: # open json-file and write the json-object
             outfile.write(json_object)
 
     def load(self, file_path):
         with open(file_path, 'r') as file:
-            json_params = json.load(file)  # a
-            djsoned_W = []
+            json_params = json.load(file)  # load the json-parameters
+            djsoned_W = [] 
             djsoned_b = []
             for layer_indx in range(len(self.layers)):
                 cur_W = np.array(json_params[layer_indx]["W"])
@@ -416,8 +416,9 @@ if __name__ == "__main__":
 
     model.setup(cost_func=Loss.MSE, input_size=1, optimizer=Optimizers.Adam(learning_rate=0.01))
 
-    # model.train(X_train, Y_train, epochs=100, learning_rate=0.01, batch_size=num_samples)
-    model.load("NeuralNetworkFromScratch/sample.json")
+    model.train(X_train, Y_train, epochs=100, learning_rate=0.01, batch_size=num_samples)
+    # model.save("NeuralNetworkFromScratch/sample.json")
+    # model.load("NeuralNetworkFromScratch/sample.json")
 
     Y_pred = model.predict(X_train)
     print(Y_pred)
