@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import json
 
 
 def initialize_parameters(prev_layer_size, layer_size, initializer):
@@ -323,7 +324,7 @@ class NeuralNetwork:
                 print(f"Cost on epoch {i}: {round(cost.item(), 5)}")
 
     def initialize_weights_biases(self, input_size):
-        layer_sizes = [input_size]
+        layer_sizes = [input_size]  # make sure initial size is there because there is no layer-object for input-layer
         for layer in self.layers:
             layer_sizes.append(layer.num_nodes)
 
@@ -361,7 +362,6 @@ class NeuralNetwork:
 
             dA_prev, dW, db = self.layers[layer_indx].backward(dA_prev, **cache)
 
-            
             self.dW[layer_indx] = dW # set the graidnets of cur-layer equal to matrix
             self.db[layer_indx] = db
 
@@ -370,6 +370,29 @@ class NeuralNetwork:
     def predict(self, X):
         return self.forward(X)
 
+    # SAVE LOAD MODEL FUNCTIONS
+    def save(self, file_path):
+        json_params = []
+        for layer_indx in range(len(self.layers)):
+            json_params.append({"W":self.W[layer_indx].tolist(), "b":self.b[layer_indx].tolist()})
+
+        json_object = json.dumps(json_params, indent=4)
+        with open(file_path, "w") as outfile:
+            outfile.write(json_object)
+
+    def load(self, file_path):
+        with open(file_path, 'r') as file:
+            json_params = json.load(file)  # a
+            djsoned_W = []
+            djsoned_b = []
+            for layer_indx in range(len(self.layers)):
+                cur_W = np.array(json_params[layer_indx]["W"])
+                cur_b = np.array(json_params[layer_indx]["b"])
+                djsoned_W.append(cur_W)
+                djsoned_b.append(cur_b)
+        
+        self.W = djsoned_W
+        self.b = djsoned_b
 
 
 if __name__ == "__main__":
@@ -388,21 +411,19 @@ if __name__ == "__main__":
 
 
     model = NeuralNetwork()
-    model.add(Layer(num_nodes=20, activation=ReLU(), initializer=Initializers.glorot_uniform))
-    model.add(Layer(num_nodes=10, activation=ReLU(), initializer=Initializers.glorot_uniform))
-    model.add(Layer(num_nodes=10, activation=ReLU(), initializer=Initializers.glorot_uniform))
-    model.add(Layer(num_nodes=10, activation=ReLU(), initializer=Initializers.glorot_uniform))
-    model.add(Layer(num_nodes=10, activation=ReLU(), initializer=Initializers.glorot_uniform))
-    model.add(Layer(num_nodes=10, activation=ReLU(), initializer=Initializers.glorot_uniform))
     model.add(Layer(num_nodes=10, activation=ReLU(), initializer=Initializers.glorot_uniform))
     model.add(Layer(num_nodes=1, activation=Linear(), initializer=Initializers.glorot_uniform))
 
     model.setup(cost_func=Loss.MSE, input_size=1, optimizer=Optimizers.Adam(learning_rate=0.01))
 
-    model.train(X_train, Y_train, epochs=5000, learning_rate=0.01, batch_size=num_samples)
+    # model.train(X_train, Y_train, epochs=100, learning_rate=0.01, batch_size=num_samples)
+    model.load("NeuralNetworkFromScratch/sample.json")
 
     Y_pred = model.predict(X_train)
+    print(Y_pred)
 
+
+    """
     plt.figure(figsize=(8, 6))
     plt.scatter(X_train, Y_train, label='Noisy Data', color='blue')
     plt.plot(X_train, Y_pred, label='Predicted Curve', color='red')
@@ -410,5 +431,5 @@ if __name__ == "__main__":
     plt.xlabel('X')
     plt.ylabel('Y')
     plt.legend()
-    plt.show()
+    plt.show()"""
     
