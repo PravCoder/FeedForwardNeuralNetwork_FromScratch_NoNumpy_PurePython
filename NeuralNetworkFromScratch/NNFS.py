@@ -53,6 +53,7 @@ class Linear(LinearActivation):
 
 class Sigmoid(LinearActivation):
     def forward(self, Z):
+        Z = np.clip(Z, -500, 500)  
         return 1 / (1 + np.exp(-Z))
 
     def backward(self, Z, dA=1):
@@ -110,10 +111,14 @@ class Loss:
 
         @staticmethod
         def forward(AL, Y):
+            epsilon = 1e-15  
+            AL = np.clip(AL, epsilon, 1 - epsilon)  
             return np.squeeze(-1 / Y.shape[0] * np.sum(np.dot(np.log(AL.T), Y) + np.dot(np.log(1 - AL.T), 1 - Y)))
 
         @staticmethod
         def backward(AL, Y):
+            epsilon = 1e-15  
+            AL = np.clip(AL, epsilon, 1 - epsilon)  
             return -Y / AL + (1 - Y) / (1 - AL)
 
     class CategoricalCrossEntropy:
@@ -340,7 +345,7 @@ class NeuralNetwork:
         # iterate through each layer-indx
         for layer in range(len(self.layers)):
             A_prev = A  # store cur-activation as previous-activataion
-            # layers-arr[layer-indx] call forward function passing in activations and parameters of cur-layer
+            # layers-arr[layer-indx] call forward function passing in activations and parameters of cur-layer, returns activation-matrix and weight-sum-matrix
             A, Z = self.layers[layer].forward(A_prev, self.W[layer], self.b[layer])
             # store previous-activations, weights, biases, and weighted-sum in cache
             self.caches.append({'A_prev': A_prev,"W": self.W[layer], "b": self.b[layer], "Z": Z})
@@ -412,11 +417,17 @@ if __name__ == "__main__":
 
     model = NeuralNetwork()
     model.add(Layer(num_nodes=10, activation=ReLU(), initializer=Initializers.glorot_uniform))
+    model.add(Layer(num_nodes=10, activation=ReLU(), initializer=Initializers.glorot_uniform))
+    model.add(Layer(num_nodes=10, activation=ReLU(), initializer=Initializers.glorot_uniform))
+    model.add(Layer(num_nodes=10, activation=ReLU(), initializer=Initializers.glorot_uniform))
+    model.add(Layer(num_nodes=10, activation=ReLU(), initializer=Initializers.glorot_uniform))
+    model.add(Layer(num_nodes=10, activation=ReLU(), initializer=Initializers.glorot_uniform))
+    model.add(Layer(num_nodes=10, activation=ReLU(), initializer=Initializers.glorot_uniform))
     model.add(Layer(num_nodes=1, activation=Linear(), initializer=Initializers.glorot_uniform))
 
     model.setup(cost_func=Loss.MSE, input_size=1, optimizer=Optimizers.Adam(learning_rate=0.01))
 
-    model.train(X_train, Y_train, epochs=100, learning_rate=0.01, batch_size=num_samples)
+    model.train(X_train, Y_train, epochs=1000, learning_rate=0.01, batch_size=num_samples, print_cost=True)
     # model.save("NeuralNetworkFromScratch/sample.json")
     # model.load("NeuralNetworkFromScratch/sample.json")
 
@@ -424,7 +435,7 @@ if __name__ == "__main__":
     print(Y_pred[0])  # oth example
 
 
-    """
+    
     plt.figure(figsize=(8, 6))
     plt.scatter(X_train, Y_train, label='Noisy Data', color='blue')
     plt.plot(X_train, Y_pred, label='Predicted Curve', color='red')
@@ -432,5 +443,5 @@ if __name__ == "__main__":
     plt.xlabel('X')
     plt.ylabel('Y')
     plt.legend()
-    plt.show()"""
+    plt.show()
     

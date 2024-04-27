@@ -2,23 +2,28 @@ from NNFS import *
 
 
 
-
 def main():
 
     x_train, y_train, examples, num_output_nodes, output_labels = process_data()
     print(f'Examples: {examples}, Output Nodes: {num_output_nodes}, Output Labels: {output_labels}')
 
     model = NeuralNetwork()
-    model.add(Layer(num_nodes=64, activation=ReLU(), initializer=Initializers.glorot_uniform))
-    model.add(Layer(num_nodes=32, activation=ReLU(), initializer=Initializers.glorot_uniform))
+    model.add(Layer(num_nodes=10, activation=ReLU(), initializer=Initializers.glorot_uniform))
+    model.add(Layer(num_nodes=10, activation=ReLU(), initializer=Initializers.glorot_uniform))
+    model.add(Layer(num_nodes=10, activation=ReLU(), initializer=Initializers.glorot_uniform))
+    model.add(Layer(num_nodes=10, activation=ReLU(), initializer=Initializers.glorot_uniform))
+    model.add(Layer(num_nodes=10, activation=ReLU(), initializer=Initializers.glorot_uniform))
+    model.add(Layer(num_nodes=10, activation=ReLU(), initializer=Initializers.glorot_uniform))
+    model.add(Layer(num_nodes=10, activation=ReLU(), initializer=Initializers.glorot_uniform))
+    model.add(Layer(num_nodes=10, activation=ReLU(), initializer=Initializers.glorot_uniform))
     model.add(Layer(num_nodes=num_output_nodes, activation=Sigmoid(), initializer=Initializers.glorot_uniform))  # output-layer
  
     model.setup(cost_func=Loss.CategoricalCrossEntropy, input_size=3, optimizer=Optimizers.SGD(learning_rate=0.01))
-    model.train(x_train, y_train, epochs=200, learning_rate=0.01, batch_size=examples)
+    model.train(x_train, y_train, epochs=900, learning_rate=0.01, batch_size=examples)
 
     Y_pred = model.predict(x_train)
 
-    example_indx = 345
+    example_indx = 60
     print(f'Actual Color: {y_train[example_indx]} {output_labels[list(y_train[example_indx]).index(max(y_train[example_indx]))]}')
     print(f'Predicted Color: {Y_pred[example_indx]} {output_labels[list(Y_pred[example_indx]).index(max(Y_pred[example_indx]))]}')
 
