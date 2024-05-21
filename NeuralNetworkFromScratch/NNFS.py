@@ -416,15 +416,15 @@ if __name__ == "__main__":
 
 
     model = NeuralNetwork()
+    model.add(Layer(num_nodes=10, activation=ReLU(), initializer=Initializers.glorot_uniform)) # this is the 1st layer not input-layer
     model.add(Layer(num_nodes=10, activation=ReLU(), initializer=Initializers.glorot_uniform))
     model.add(Layer(num_nodes=10, activation=ReLU(), initializer=Initializers.glorot_uniform))
     model.add(Layer(num_nodes=10, activation=ReLU(), initializer=Initializers.glorot_uniform))
     model.add(Layer(num_nodes=10, activation=ReLU(), initializer=Initializers.glorot_uniform))
     model.add(Layer(num_nodes=10, activation=ReLU(), initializer=Initializers.glorot_uniform))
     model.add(Layer(num_nodes=10, activation=ReLU(), initializer=Initializers.glorot_uniform))
-    model.add(Layer(num_nodes=10, activation=ReLU(), initializer=Initializers.glorot_uniform))
-    model.add(Layer(num_nodes=1, activation=Linear(), initializer=Initializers.glorot_uniform))
-
+    model.add(Layer(num_nodes=1, activation=Linear(), initializer=Initializers.glorot_uniform)) # this is output-layer
+    # number of input nodes is specified here
     model.setup(cost_func=Loss.MSE, input_size=1, optimizer=Optimizers.Adam(learning_rate=0.01))
 
     model.train(X_train, Y_train, epochs=1000, learning_rate=0.01, batch_size=num_samples, print_cost=True)
