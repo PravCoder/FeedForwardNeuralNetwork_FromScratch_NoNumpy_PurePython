@@ -274,11 +274,13 @@ class NeuralNetwork:
         self.Sdb = []
         self.caches = []   # params = [{dW:matrix, db:matrix}, {}], Each item is a dictionary with the 'A_prev', 'W', 'b', and 'Z' values for the layer - Used in backprop
         self.costs = []
+        self.input_size = None
 
     def add(self, layer):
         self.layers.append(layer)
 
     def setup(self, cost_func, input_size, optimizer):
+        self.input_size = input_size
         self.cost_func = cost_func  # set cost function 
         self.optimizer = optimizer  # set optimizer function
         self.initialize_weights_biases(input_size)
@@ -399,6 +401,11 @@ class NeuralNetwork:
         self.W = djsoned_W
         self.b = djsoned_b
 
+    def print_network_architecture(self):
+        print(f"Layer({0}): nodes={self.input_size} act=None")
+        for i, layer in enumerate(self.layers):
+            print(f"Layer({i+1}): nodes={layer.num_nodes} act={type(layer.activation).__name__}")
+
 
 if __name__ == "__main__":
 
@@ -444,4 +451,5 @@ if __name__ == "__main__":
     plt.ylabel('Y')
     plt.legend()
     plt.show()
+    # model.print_network_architecture()
     

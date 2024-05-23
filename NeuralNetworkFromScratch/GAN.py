@@ -23,7 +23,8 @@ class GenerativeAdversarialNet:
         self.discriminator_model = NeuralNetwork()
         for i in range(1, len(self.D_dims)):
             self.discriminator_model.add(Layer(num_nodes=self.D_dims[i], activation=ReLU(), initializer=Initializers.glorot_uniform))
-        self.discriminator_model.setup(cost_func=Loss.MSE, input_size=self.D_dims[0], optimizer=Optimizers.SGD(learning_rate=0.01))
+        # Loss function for model-D ia binary-cross-entropy because it predicts probality that given sample is real-data
+        self.discriminator_model.setup(cost_func=Loss.BinaryCrossEntropy, input_size=self.D_dims[0], optimizer=Optimizers.SGD(learning_rate=0.01))
 
 
     def train(self):
@@ -36,6 +37,8 @@ class GenerativeAdversarialNet:
 
 
 
-
 if __name__ == "__main__":
-    pass
+    discriminator_dimensions = [1, 5,5, 1]
+    generator_dimensions = [1, 5,5, 1]
+    num_epochs = 100
+    gan = GenerativeAdversarialNet(num_epochs=100, G_dims=generator_dimensions, D_dims=discriminator_dimensions)
