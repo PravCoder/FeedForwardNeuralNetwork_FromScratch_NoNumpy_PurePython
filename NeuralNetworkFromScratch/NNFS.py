@@ -112,14 +112,17 @@ class Loss:
         @staticmethod
         def forward(AL, Y):
             epsilon = 1e-15  
-            AL = np.clip(AL, epsilon, 1 - epsilon)  
-            return np.squeeze(-1 / Y.shape[0] * np.sum(np.dot(np.log(AL.T), Y) + np.dot(np.log(1 - AL.T), 1 - Y)))
+            AL = np.clip(AL, epsilon, 1 - epsilon)  # clip activations of last-layer min=epsilon max=1-epsilon, if values in AL are less than min it becomes min if values are more than max it becomes max
+            # compute loss which is average of all examples Y-shape(examples, output-nodes), perform element-wise multiplication
+            loss = -1 / Y.shape[0] * np.sum(Y * np.log(AL) + (1 - Y) * np.log(1 - AL))
+            return loss 
 
         @staticmethod
         def backward(AL, Y):
             epsilon = 1e-15  
             AL = np.clip(AL, epsilon, 1 - epsilon)  
-            return -Y / AL + (1 - Y) / (1 - AL)
+            dAL = - (Y / AL) + (1 - Y) / (1 - AL)   # derivative of 
+            return dAL / Y.shape[0]
 
     class CategoricalCrossEntropy:
 
@@ -135,6 +138,7 @@ class Loss:
 
         @staticmethod
         def forward(AL, Y):
+            # print(Y.shape[0])
             return np.squeeze(1 / Y.shape[0] * np.sum(np.square((Y - AL))))
 
         @staticmethod
@@ -402,10 +406,13 @@ class NeuralNetwork:
         self.b = djsoned_b
 
     def print_network_architecture(self):
-        print(f"Layer({0}): nodes={self.input_size} act=None")
+        print(f"\nNetwork Architecture: loss={self.cost_func}")
+        print(f"*Layer({0}): nodes={self.input_size} act=None")
         for i, layer in enumerate(self.layers):
-            print(f"Layer({i+1}): nodes={layer.num_nodes} act={type(layer.activation).__name__}")
-
+            if i != len(self.layers)-1:
+                print(f"Layer({i+1}): nodes={layer.num_nodes} act={type(layer.activation).__name__}")
+            else:
+                print(f"*Layer({i+1}): nodes={layer.num_nodes} act={type(layer.activation).__name__}")
 
 if __name__ == "__main__":
 
@@ -423,23 +430,25 @@ if __name__ == "__main__":
 
 
     model = NeuralNetwork()
-    model.add(Layer(num_nodes=10, activation=ReLU(), initializer=Initializers.glorot_uniform)) # this is the 1st layer not input-layer
+    model.add(Layer(num_nodes=10, activation=ReLU(), initializer=Initializers.glorot_uniform)) # this is the 1st layer not input-layer, input-layer does not have activation
     model.add(Layer(num_nodes=10, activation=ReLU(), initializer=Initializers.glorot_uniform))
     model.add(Layer(num_nodes=10, activation=ReLU(), initializer=Initializers.glorot_uniform))
     model.add(Layer(num_nodes=10, activation=ReLU(), initializer=Initializers.glorot_uniform))
     model.add(Layer(num_nodes=10, activation=ReLU(), initializer=Initializers.glorot_uniform))
     model.add(Layer(num_nodes=10, activation=ReLU(), initializer=Initializers.glorot_uniform))
     model.add(Layer(num_nodes=10, activation=ReLU(), initializer=Initializers.glorot_uniform))
-    model.add(Layer(num_nodes=1, activation=Linear(), initializer=Initializers.glorot_uniform)) # this is output-layer
+    model.add(Layer(num_nodes=1, activation=Linear(), initializer=Initializers.glorot_uniform)) # this is output-layer activation, can be softmax, sigmoid, tanh
     # number of input nodes is specified here
     model.setup(cost_func=Loss.MSE, input_size=1, optimizer=Optimizers.Adam(learning_rate=0.01))
 
     model.train(X_train, Y_train, epochs=1000, learning_rate=0.01, batch_size=num_samples, print_cost=True)
-    # model.save("NeuralNetworkFromScratch/sample.json")
-    # model.load("NeuralNetworkFromScratch/sample.json")
+    # # model.save("NeuralNetworkFromScratch/sample.json")
+    # # model.load("NeuralNetworkFromScratch/sample.json")
 
     Y_pred = model.predict(X_train)  # [e1, e2, e3, e4], e4 = [n1, n2, n3]
-    print(Y_pred[0])  # oth example
+    print(Y_pred[0])  # ith example
+    print(X_train.shape)
+    print(Y_train.shape)
 
 
     
@@ -451,5 +460,22 @@ if __name__ == "__main__":
     plt.ylabel('Y')
     plt.legend()
     plt.show()
-    # model.print_network_architecture()
+    model.print_network_architecture()
     
+    print(Y_train)
+    print(Y_train.shape)
+
+
+"""
+TODO:
+- GAN
+- Binary classification
+- Multiclass classification
+- RNN
+- Image classification
+- MNIST
+- Gradient checking
+- Droput
+- Learing rate decay
+- L2-regularization
+"""

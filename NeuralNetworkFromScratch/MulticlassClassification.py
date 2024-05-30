@@ -34,13 +34,16 @@ def main():
     model.add(Layer(num_nodes=output_nodes, activation=Sigmoid(), initializer=Initializers.glorot_uniform))
     
     model.setup(cost_func=Loss.CategoricalCrossEntropy, input_size=num_input_nodes, optimizer=Optimizers.SGD(learning_rate=0.01))
-    model.train(train_x, train_y, epochs=10000, learning_rate=0.01, batch_size=examples)
+    # model.train(train_x, train_y, epochs=10000, learning_rate=0.01, batch_size=examples)
 
-    Y_pred = model.predict(train_x)
+    # Y_pred = model.predict(train_x)
 
-    example_indx = 999
-    print(f'Actual Index: {y_one_hot_encoded[example_indx]}')
-    print(f'Prediction: {Y_pred[example_indx]}')
+    # example_indx = 999
+    # print(f'Actual Index: {y_one_hot_encoded[example_indx]}')
+    # print(f'Prediction: {Y_pred[example_indx]}')
+
+    print(train_x)
+    print(train_x.shape)
 
 main()
 
