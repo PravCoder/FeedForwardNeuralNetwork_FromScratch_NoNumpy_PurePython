@@ -60,6 +60,16 @@ class Sigmoid(LinearActivation):
         s = self.forward(Z)
         dZ = s * (1 - s)
         return dA * dZ
+    
+class Softmax(LinearActivation):
+
+    def forward(self, Z):
+        exp_values = np.exp(Z - np.max(Z, axis=1, keepdims=True)) # e to the power of every z-value in layer, subtract max for numerical stability
+        probabilities = exp_values / np.sum(exp_values, axis=1, keepdims=True) # sum all exp-values of every z-value in layer
+        return probabilities
+    
+    def backward(self, Z, dA=1):
+        return dA
 
 class ReLU(LinearActivation):
     def forward(self, Z):
@@ -128,11 +138,19 @@ class Loss:
 
         @staticmethod
         def forward(AL, Y):
-            return np.squeeze(-1 / Y.shape[0] * np.sum(Y * np.log(AL)))
+            epsilon = 1e-15  # to avoid log(0)
+            AL = np.clip(AL, epsilon, 1 - epsilon)  # clip prediction
+            # compute categorical loss formula, y-shape(examples, output-nodes)
+            loss = -np.sum(Y * np.log(AL)) / Y.shape[0]
+            return loss
 
         @staticmethod
         def backward(AL, Y):
-            return -Y / AL
+            epsilon = 1e-15  # to avoid division by 0
+            AL = np.clip(AL, epsilon, 1 - epsilon)  # clip prediction
+            
+            dAL = - (Y / AL) + (1 - Y) / (1 - AL)
+            return dAL / Y.shape[0] 
 
     class MSE:
 

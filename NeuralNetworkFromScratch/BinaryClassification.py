@@ -37,9 +37,9 @@ def main():
     
     data = datasets.load_breast_cancer()
     num_features = len(data.feature_names)
-    num_classes = len(data.target_names)
+    num_classes = len(data.target_names) # 2, but 1 output node for binary classification
     X = np.array(data.data)     # each row represents example, each element in row is a feature, lenght of row is 30. shape(examples, feautres)
-    Y = np.array(data.target) # 1D-list where each element is either 0/1 for each element. Shape
+    Y = np.array(data.target)   # 1D-list where each element is either 0/1 for each element. Shape
     num_examples = len(X)
 
     model = NeuralNetwork()

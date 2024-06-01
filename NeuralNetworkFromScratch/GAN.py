@@ -68,7 +68,8 @@ class GenerativeAdversarialNet:
             # self.generator_model.train(self.get_random_noise_vector(), self.Y_train, epochs=self.num_epochs, learning_rate=0.01, batch_size=self.X_fake.shape[0], print_cost=True)
 
         Y_pred = self.generator_model.predict(self.get_random_noise_vector())
-        print(Y_pred[0])
+        print(Y_pred[0:5])
+        print(X_train[0:5])
 
 
 if __name__ == "__main__":
