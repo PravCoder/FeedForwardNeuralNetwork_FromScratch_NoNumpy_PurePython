@@ -56,7 +56,7 @@ def main():
     model.add(Layer(num_nodes=1, activation=Sigmoid(), initializer=Initializers.glorot_uniform))
     
     model.setup(cost_func=Loss.BinaryCrossEntropy, input_size=num_features, optimizer=Optimizers.SGD(learning_rate=0.01))
-
+    model.print_network_architecture()
     model.train(X, Y, epochs=1000, learning_rate=0.75, batch_size=num_examples, print_cost=True)
 
     Y_pred = model.predict(X)  

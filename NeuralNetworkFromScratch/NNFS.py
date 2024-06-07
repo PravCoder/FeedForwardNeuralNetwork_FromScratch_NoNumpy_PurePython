@@ -174,6 +174,7 @@ class Loss:
             m = Y.shape[0]
             return (1 / m) * (AL - Y) / np.sqrt(np.mean(np.square(AL - Y)) + 1e-8)
         
+        
 
 class Optimizers:
     """
@@ -301,11 +302,12 @@ class NeuralNetwork:
     def add(self, layer):
         self.layers.append(layer)
 
-    def setup(self, cost_func, input_size, optimizer):
+    def setup(self, cost_func, input_size, optimizer, is_gan_model=""):
         self.input_size = input_size
         self.cost_func = cost_func  # set cost function 
         self.optimizer = optimizer  # set optimizer function
         self.initialize_weights_biases(input_size)
+        self.is_gan_model = is_gan_model
 
         # check for all optimization methods and initlize parameters
         if self.optimizer.name == "SGD": 
@@ -318,9 +320,13 @@ class NeuralNetwork:
             self.W, self.b, self.VdW, self.Vdb, self.SdW, self.Sdb = self.optimizer.configure(self.W, self.b, self.VdW, self.SdW, self.Vdb, self.Sdb, self.layers)
         
 
-    def train(self, X, Y, epochs, learning_rate=0.001, batch_size=None, print_cost=True):
+    def train(self, X, Y, epochs, learning_rate=0.001, batch_size=None, print_cost=True, D_out_real=None, D_out_fake=None, Y_fake=None, input_type=""):
         
         self.optimizer.learning_rate = learning_rate
+        self.input_type = input_type
+        self.D_out_real = D_out_real
+        self.D_out_fake = D_out_fake
+        self.Y_fake = Y_fake
 
         num_examples = X.shape[0]       # number of examples
         
@@ -332,8 +338,12 @@ class NeuralNetwork:
             for x, y in zip(x_batches, y_batches):
                 
                 AL = self.forward(x)                  # feed x-data through network
-
-                cost = self.cost_func.forward(AL, y)  # compute cost
+                if self.is_gan_model == "":
+                    cost = self.cost_func.forward(AL, y)  # compute cost
+                if self.is_gan_model == "G":
+                    cost = self.cost_func.forward(AL, Y, self.D_out_fake)
+                if self.is_gan_model == "D":
+                    cost = self.cost_func.forward(AL, Y, self.D_out_real, self.D_out_fake)
 
                 self.backward(AL, y)  # get gradients, grad = [{'dW': dW, 'db': db}, {}, {}], each dictionary is for a layer
 
@@ -383,7 +393,13 @@ class NeuralNetwork:
             self.db.append(0)
 
         # derivative of prev-layer activations given prediction-matrix and reshaped labes
-        dA_prev = self.cost_func.backward(AL, Y.reshape(AL.shape))
+        dA_prev = 0
+        if self.is_gan_model == "":
+            dA_prev = self.cost_func.backward(AL, Y.reshape(AL.shape))
+        if self.input_type == "real":
+            dA_prev = self.cost_func.backward(Y, self.D_out_real, self.D_out_fake, self.Y_fake, input_type="real")
+        if self.input_type == "fake":
+            dA_prev = self.cost_func.backward(Y, self.D_out_real, self.D_out_fake, self.Y_fake, input_type="fake")
 
         # iterate thorugh layers backward
         for layer_indx in reversed(range(len(self.layers))):
@@ -431,7 +447,7 @@ class NeuralNetwork:
                 print(f"Layer({i+1}): nodes={layer.num_nodes} act={type(layer.activation).__name__}")
             else:
                 print(f"*Layer({i+1}): nodes={layer.num_nodes} act={type(layer.activation).__name__}")
-
+                
 if __name__ == "__main__":
 
     
@@ -486,14 +502,15 @@ if __name__ == "__main__":
 
 """
 TODO:
-- GAN
-- Binary classification
-- Multiclass classification
-- RNN
-- Image classification
-- MNIST
-- Gradient checking
-- Droput
-- Learing rate decay
-- L2-regularization
+[X] GAN
+[X] Binary classification
+[X] Multiclass classification
+[-] MNIST (not performing well)
+[] Image classification
+[] RNN
+[] Image classification
+[] Gradient checking
+[] Droput
+[] Learing rate decay
+[] L2-regularization
 """
