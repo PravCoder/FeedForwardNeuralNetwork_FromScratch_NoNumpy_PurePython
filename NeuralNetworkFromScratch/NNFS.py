@@ -414,6 +414,9 @@ class NeuralNetwork:
 
     def predict(self, X):
         return self.forward(X)
+    
+    def evaluate_accuracy(self, X, Y_hat):
+        pass
 
     # SAVE LOAD MODEL FUNCTIONS
     def save(self, file_path):
