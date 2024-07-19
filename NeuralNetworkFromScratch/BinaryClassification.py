@@ -58,7 +58,7 @@ def main():
     
     model.setup(cost_func=Loss.BinaryCrossEntropy, input_size=num_features, optimizer=Optimizers.SGD(learning_rate=0.01))
     model.print_network_architecture()
-    model.train(X, Y, epochs=1000, learning_rate=0.75, batch_size=num_examples, print_cost=True)
+    model.train(X, Y, epochs=100, learning_rate=0.75, batch_size=num_examples, print_cost=True)   # 1000 epochs for best accuracy
 
     Y_pred = model.predict(X)  
 

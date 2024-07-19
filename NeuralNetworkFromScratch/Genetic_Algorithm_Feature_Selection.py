@@ -26,7 +26,7 @@ class FeatureSubset:
         model.add(Layer(num_nodes=1, activation=Sigmoid(), initializer=Initializers.glorot_uniform))
 
         model.setup(cost_func=Loss.BinaryCrossEntropy, input_size=self.num_features, optimizer=Optimizers.SGD(learning_rate=0.01))
-        model.train(X, Y, epochs=10, learning_rate=0.75, batch_size=len(X), print_cost=True)
+        model.train(X, Y, epochs=100, learning_rate=0.75, batch_size=len(X), print_cost=False) # increase epochs for better accuracy but slower
 
         self.fitness = model.costs[-1]  # set fitness equal to model cost TBD: change to accuracy
         
@@ -106,7 +106,7 @@ class Population:
     
     def single_point_crossover(self, subset1, subset2):
         crossover_point = random.randint(1, len(subset1.genome)-1) # choose random cross-point frmo indx-1 to last index in the parent1s genome
-        genome1 = subset1.genome[:crossover_point] + subset2.genome[crossover_point:]
+        genome1 = subset1.genome[:crossover_point] + subset2.genome[crossover_point:] # features before subset1 plus features after subset 2
         genome2 = subset1.genome[crossover_point:] + subset2.genome[:crossover_point]
         offspring1 = FeatureSubset(genome=genome1)
         offspring2 = FeatureSubset(genome=genome2)
@@ -116,6 +116,10 @@ class Population:
         self.parents = []
         for _ in range(self.num_individuals):
             self.parents.append(self.tournament_selection())
+
+    def select_best_subsets_elitism(self):
+        self.parents = []
+
 
     def tournament_selection(self):
         sample = random.sample(self.chromosomes, self.tournament_size)
@@ -142,14 +146,16 @@ def main():
     print(f"Id to label: {id_to_label}")
 
     total_generations = 200
-    pop = Population(15, num_features, X, Y)
+    individuals = 10
+    pop = Population(individuals, num_features, X, Y)
     pop.create_inital_population(id_to_label)
 
     for gen in range(total_generations):
         print(f"\nGeneration #{gen}")
         if pop.is_done() == True:
             pop.create_new_generation()  # TBD: not eval
-            
+    
+    # compare with binaryclassfication.py make sure network architecture/hyperparams are same and see if we find a subset of features that yields higher accuracy. Also make sure paramtere initalization is same?
 
 if __name__ == "__main__":
     main()
