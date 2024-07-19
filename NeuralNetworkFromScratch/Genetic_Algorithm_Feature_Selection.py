@@ -29,19 +29,23 @@ class FeatureSubset:
         model.train(X, Y, epochs=10, learning_rate=0.75, batch_size=len(X), print_cost=True)
 
         self.fitness = model.costs[-1]  # set fitness equal to model cost TBD: change to accuracy
-        print(self.fitness)
+        
+        self.accuracy = model.evaluate_accuracy(X, Y, show=False)
+        return self.fitness, self.accuracy
 
 
 
 class Population:
 
-    def __init__(self, num_individuals, num_features):
+    def __init__(self, num_individuals, num_features, X, Y):
         self.num_individuals = num_individuals
         self.num_features = num_features
         self.chromosomes = []
         self.parents = []
         self.generation_num = 1
         self.tournament_size = 5
+        self.X = X  # numpy array each row is example, each col is feature
+        self.Y = Y
 
     def create_inital_population(self, id_to_label):
         for _ in range(self.num_individuals):
@@ -54,8 +58,10 @@ class Population:
             cur_subset = FeatureSubset(genome=cur_genome)
             self.chromosomes.append(cur_subset)
 
-    def create_new_generation(self, X, Y):
-        self.evaluate_pop_fitness(X, Y)
+        self.evaluate_pop_fitness()
+
+    def create_new_generation(self):
+        
         self.select_best_subsets_tournament_selection()
         self.chromosomes = []
 
@@ -67,10 +73,36 @@ class Population:
 
             self.chromosomes.append(offspring1)
             self.chromosomes.append(offspring2)
+        
+        self.evaluate_pop_fitness()
 
-    def evaluate_pop_fitness(self, X, Y):
-        for a in self.chromosomes:
-            a.evaluate_fitness(X, Y)
+    def evaluate_pop_fitness(self):
+        fitness_sum = 0
+        accuracy_sum = 0
+        feature_sum = 0
+        for a in self.chromosomes:  # iterate through each feature-sub get X-train for its feature-subset and evaluate its fitness
+            X_modified = self.get_selected_feature_training_data(subset=a)
+            a.evaluate_fitness(X_modified, self.Y)
+            fitness_sum += a.fitness
+            accuracy_sum += a.accuracy
+            feature_sum += a.num_features
+
+        gen_fitness_avr = fitness_sum / len(self.chromosomes)
+        gen_accuracy_avr = accuracy_sum / len(self.chromosomes)
+        gen_feature_avr = feature_sum / len(self.chromosomes)
+        print(f"average fitness: {gen_fitness_avr}")
+        print(f"average accuracy: {gen_accuracy_avr}")
+        print(f"average num features: {gen_feature_avr}")
+
+    def get_selected_feature_training_data(self, subset): # given feature-subset-obj, create X-train for its specific features
+        Xg = [] 
+        for i, row in enumerate(self.X):
+            row_g = []  
+            for j, col in enumerate(subset.genome):
+                if subset.genome[j] == 1:
+                    row_g.append(self.X[i][j])
+            Xg.append(row_g)
+        return np.array(Xg)
     
     def single_point_crossover(self, subset1, subset2):
         crossover_point = random.randint(1, len(subset1.genome)-1) # choose random cross-point frmo indx-1 to last index in the parent1s genome
@@ -94,7 +126,7 @@ class Population:
         for a in self.chromosomes:
             if a.fitness == -1:
                 return False
-        return False
+        return True
 
 def main():
     data = datasets.load_breast_cancer()
@@ -109,14 +141,15 @@ def main():
     print(f"Number of labels: {num_labels}, {label_names}")
     print(f"Id to label: {id_to_label}")
 
-    total_generations = 5
-    pop = Population(15, num_features)
+    total_generations = 200
+    pop = Population(15, num_features, X, Y)
     pop.create_inital_population(id_to_label)
 
     for gen in range(total_generations):
-        print(f"Generation #{gen}")
+        print(f"\nGeneration #{gen}")
         if pop.is_done() == True:
-            pop.create_new_generation(X, Y)
+            pop.create_new_generation()  # TBD: not eval
+            
 
 if __name__ == "__main__":
     main()

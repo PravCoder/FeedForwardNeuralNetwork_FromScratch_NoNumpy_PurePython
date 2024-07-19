@@ -415,8 +415,14 @@ class NeuralNetwork:
     def predict(self, X):
         return self.forward(X)
     
-    def evaluate_accuracy(self, X, Y_hat):
-        pass
+    def evaluate_accuracy(self, X, Y, show=True): # only works for binary classification
+        Y_hat = self.predict(X)
+        Y_hat = (Y_hat >= 0.5).astype(int).flatten()
+        # print(f"yhat: {Y_hat.flatten()}")
+        # print(f"\ny: {Y}")
+        accuracy = np.mean(Y_hat == Y)
+        if show: print(f"accuracy: {accuracy}")
+        return accuracy
 
     # SAVE LOAD MODEL FUNCTIONS
     def save(self, file_path):
@@ -462,7 +468,7 @@ if __name__ == "__main__":
 
     num_samples = 500
     X_train, Y_train = generate_noisy_sine_data(num_samples)
-
+    # print(Y_train)
     X_train = X_train.reshape(-1, 1)
 
 
@@ -483,10 +489,11 @@ if __name__ == "__main__":
     # # model.load("NeuralNetworkFromScratch/sample.json")
 
     Y_pred = model.predict(X_train)  # [e1, e2, e3, e4], e4 = [n1, n2, n3]
-    print(Y_pred[0])  # ith example
-    print(X_train.shape)
-    print(Y_train.shape)
+    # print(Y_pred[0])  # ith example
+    # print(X_train.shape)
+    # print(Y_train.shape)
 
+    print(model.evaluate_accuracy(X_train, Y_train))
 
     
     plt.figure(figsize=(8, 6))
@@ -499,8 +506,8 @@ if __name__ == "__main__":
     plt.show()
     model.print_network_architecture()
     
-    print(Y_train)
-    print(Y_train.shape)
+    # print(Y_train)
+    # print(Y_train.shape)
 
 
 """
