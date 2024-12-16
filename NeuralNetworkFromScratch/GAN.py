@@ -2,6 +2,7 @@ from NNFS import *
 
 class GANLoss:
 
+    # Discriminator Loss Function
     class DLoss:
 
         @staticmethod
@@ -26,8 +27,7 @@ class GANLoss:
                 return dA_prev_fake
 
             return None
-
-    
+    # Generator Loss Function
     class GLoss:
 
         @staticmethod
@@ -60,6 +60,7 @@ class GenerativeAdversarialNet:
         self.initialize_models()
 
     def initialize_models(self):
+
         # GENERATOR
         self.generator_model = NeuralNetwork() # init empty nn-obj
         # iterate from 2nd element which is 1st layer to the output-layer-indx inclusive
@@ -128,17 +129,18 @@ if __name__ == "__main__":
         X = np.linspace(0, 2*np.pi, num_samples)
         Y = np.sin(X) + 0.1 * np.random.randn(num_samples)
         return X, Y
-    num_samples = 500
+    num_samples = 400
     X_train, Y_train = generate_noisy_sine_data(num_samples)
     X_train = X_train.reshape(-1, 1)
 
-    discriminator_dimensions = [1, 5,5, 1]
-    generator_dimensions = [1, 5,5, 1] # 1 output nodes because sine-curve takes 1 x-value and outputs y-value
+    # Input: fake/real sine curve point. Output: prob of real/fake
+    discriminator_dimensions = [2, 5,5, 1]
+    # Input: random noise vector. Output: fake sine curve point
+    generator_dimensions = [10, 10,10, 2]
     num_epochs = 1
     gan = GenerativeAdversarialNet(X_train=X_train, Y_train=Y_train, num_epochs=num_epochs, G_dims=generator_dimensions, D_dims=discriminator_dimensions)
     
-    # gan.discriminator_model.print_network_architecture()
-    # gan.generator_model.print_network_architecture()
+    print(gan.Y_real)
     
     gan.train()
 
@@ -155,3 +157,8 @@ if __name__ == "__main__":
     plt.legend()
     plt.show()
 
+
+    # NOTE:
+    # combine the real and fake datapoints. The real features comes from real dataset and its labels are all 1, the fake features comes from what the generator outputs and fake labels are all 0. 
+    # do generator.predict() to see fake samples.
+    

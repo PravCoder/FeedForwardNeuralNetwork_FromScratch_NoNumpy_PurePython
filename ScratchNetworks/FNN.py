@@ -796,8 +796,9 @@ y = [
     [1.0, -1.0, -1.0, 1.0],
 ]
 
+layers_dims = [4, 2, 3, 4, 1]  # num of neurons of each layers
 if __name__ == "__main__":
-    nn = FeedForwardNeuralNetwork(train_x, train_y, layers_dims, 0.0075, 1, l2_regularization=False, binary_classification=True, multiclass_classification=False, optimizer="gradient descent", learning_rate_decay=False, gradient_descent_variant="batch")
+    nn = FeedForwardNeuralNetwork(train_x, train_y, layers_dims, 0.0075, 10, l2_regularization=False, binary_classification=True, multiclass_classification=False, optimizer="gradient descent", learning_rate_decay=False, gradient_descent_variant="batch")
     nn.train()
     nn.check_gradients()
     nn.evaluate_accuracy()

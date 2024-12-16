@@ -338,6 +338,7 @@ class NeuralNetwork:
             for x, y in zip(x_batches, y_batches):
                 
                 AL = self.forward(x)                  # feed x-data through network
+
                 if self.is_gan_model == "":
                     cost = self.cost_func.forward(AL, y)  # compute cost
                 if self.is_gan_model == "G":
@@ -401,7 +402,7 @@ class NeuralNetwork:
         if self.input_type == "fake":
             dA_prev = self.cost_func.backward(Y, self.D_out_real, self.D_out_fake, self.Y_fake, input_type="fake")
 
-        # iterate thorugh layers backward
+        # iterate through layers backward
         for layer_indx in reversed(range(len(self.layers))):
             cache = self.caches[layer_indx]  # current cache of layer 
 
@@ -456,22 +457,21 @@ class NeuralNetwork:
                 print(f"Layer({i+1}): nodes={layer.num_nodes} act={type(layer.activation).__name__}")
             else:
                 print(f"*Layer({i+1}): nodes={layer.num_nodes} act={type(layer.activation).__name__}")
-                
-if __name__ == "__main__":
 
-    
+
+
+
+def sine_curve():
     # SINE CURVE FITTING TASK
     def generate_noisy_sine_data(num_samples):
         X = np.linspace(0, 2*np.pi, num_samples)
         Y = np.sin(X) + 0.1 * np.random.randn(num_samples)
         return X, Y
-
     num_samples = 500
     X_train, Y_train = generate_noisy_sine_data(num_samples)
     # print(Y_train)
     X_train = X_train.reshape(-1, 1)
-
-
+    print(f"{X_train=}")
     model = NeuralNetwork()
     model.add(Layer(num_nodes=10, activation=ReLU(), initializer=Initializers.glorot_uniform)) # this is the 1st layer not input-layer, input-layer does not have activation
     model.add(Layer(num_nodes=10, activation=ReLU(), initializer=Initializers.glorot_uniform))
@@ -481,21 +481,16 @@ if __name__ == "__main__":
     model.add(Layer(num_nodes=10, activation=ReLU(), initializer=Initializers.glorot_uniform))
     model.add(Layer(num_nodes=10, activation=ReLU(), initializer=Initializers.glorot_uniform))
     model.add(Layer(num_nodes=1, activation=Linear(), initializer=Initializers.glorot_uniform)) # this is output-layer activation, can be softmax, sigmoid, tanh
-    # number of input nodes is specified here
+    # number of input nodes is specified here sine curve takes in 1 input x and outputs 1 output y.
     model.setup(cost_func=Loss.MSE, input_size=1, optimizer=Optimizers.Adam(learning_rate=0.01))
-
-    model.train(X_train, Y_train, epochs=1000, learning_rate=0.01, batch_size=num_samples, print_cost=True)
+    model.train(X_train, Y_train, epochs=1, learning_rate=0.01, batch_size=num_samples, print_cost=True)
     # # model.save("NeuralNetworkFromScratch/sample.json")
     # # model.load("NeuralNetworkFromScratch/sample.json")
-
     Y_pred = model.predict(X_train)  # [e1, e2, e3, e4], e4 = [n1, n2, n3]
     # print(Y_pred[0])  # ith example
     # print(X_train.shape)
     # print(Y_train.shape)
-
     print(model.evaluate_accuracy(X_train, Y_train))
-
-    
     plt.figure(figsize=(8, 6))
     plt.scatter(X_train, Y_train, label='Noisy Data', color='blue')
     plt.plot(X_train, Y_pred, label='Predicted Curve', color='red')
@@ -505,9 +500,21 @@ if __name__ == "__main__":
     plt.legend()
     plt.show()
     model.print_network_architecture()
-    
     # print(Y_train)
     # print(Y_train.shape)
+    
+                
+if __name__ == "__main__":
+
+    # HARDCODED TASK - identify odds with 1. binary classification
+    # input format: each row is an example, each element in row-example is input node value. 
+    x_train = [[1], [2], [3], [4], [5], [6], [7], [8], [9], [10]]
+    y_train = [1, 0, 1, 0, 1, 0, 1, 0, 1, 0]
+
+    sine_curve()
+
+    
+    
 
 
 """
