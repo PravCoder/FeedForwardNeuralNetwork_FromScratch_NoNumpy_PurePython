@@ -482,7 +482,7 @@ def sine_curve():
     model.add(Layer(num_nodes=1, activation=Linear(), initializer=Initializers.glorot_uniform)) # this is output-layer activation, can be softmax, sigmoid, tanh
     # number of input nodes is specified here sine curve takes in 1 input x and outputs 1 output y.
     model.setup(cost_func=Loss.MSE, input_size=1, optimizer=Optimizers.Adam(learning_rate=0.01))
-    model.train(X_train, Y_train, epochs=1, learning_rate=0.01, batch_size=num_samples, print_cost=True)
+    model.train(X_train, Y_train, epochs=500, learning_rate=0.01, batch_size=num_samples, print_cost=True)
     # # model.save("NeuralNetworkFromScratch/sample.json")
     # # model.load("NeuralNetworkFromScratch/sample.json")
     Y_pred = model.predict(X_train)  # [e1, e2, e3, e4], e4 = [n1, n2, n3]
