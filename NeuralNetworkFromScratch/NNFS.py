@@ -9,30 +9,6 @@ def initialize_parameters(prev_layer_size, layer_size, initializer):
     W_layer, b_layer
     return W_layer, b_layer
 
-class Layer:
-    """
-    Representation of a layer. Stores number of nodes, activation object, initializer function.
-    """
-    def __init__(self, num_nodes, activation, initializer):
-        self.num_nodes = num_nodes
-        self.activation = activation
-        self.initializer = initializer
-
-    def forward(self, A_prev, W, b):    # given activations for previous layer and weights and bias of current layer
-        # print(A_prev)
-        # print("\n")
-        # print(W)
-        Z = np.dot(A_prev, W) + b       # compute weighted-sum
-        A = self.activation.forward(Z)  # activation-obj.forward(weighted-sum)
-        return A, Z                     # return activations and weighted-sum of current-layer
-
-    def backward(self, dA, A_prev, W, b, Z):    
-        m = A_prev.shape[0]  # number of examples is the length of first index of activation-prev-layer
-        dZ = self.activation.backward(Z, dA)
-        dW = 1 / m * np.dot(A_prev.T, dZ)
-        db = 1 / m * np.sum(dZ, axis=0, keepdims=True)
-        dA_prev = np.dot(dZ, W.T)
-        return dA_prev, dW, db
 
 # Base-class interface
 class LinearActivation:
@@ -280,7 +256,30 @@ class Optimizers:
             return W, b, dW, db, VdW, SdW, Vdb, Sdb
 
 
+class Layer:
+    """
+    Representation of a layer. Stores number of nodes, activation object, initializer function.
+    """
+    def __init__(self, num_nodes, activation, initializer):
+        self.num_nodes = num_nodes
+        self.activation = activation
+        self.initializer = initializer
 
+    def forward(self, A_prev, W, b):    # given activations for previous layer and weights and bias of current layer
+        # print(A_prev)
+        # print("\n")
+        # print(W)
+        Z = np.dot(A_prev, W) + b       # compute weighted-sum
+        A = self.activation.forward(Z)  # activation-obj.forward(weighted-sum)
+        return A, Z                     # return activations and weighted-sum of current-layer
+
+    def backward(self, dA, A_prev, W, b, Z):    
+        m = A_prev.shape[0]  # number of examples is the length of first index of activation-prev-layer
+        dZ = self.activation.backward(Z, dA)
+        dW = 1 / m * np.dot(A_prev.T, dZ)
+        db = 1 / m * np.sum(dZ, axis=0, keepdims=True)
+        dA_prev = np.dot(dZ, W.T)
+        return dA_prev, dW, db
 
 class NeuralNetwork:
 
