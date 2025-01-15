@@ -1,14 +1,16 @@
 import numpy as np
+import matplotlib.pyplot as plt
 
 class Model:
 
-    def __init__(self, X, Y, dimensions, activations, iterations=100, learning_rate=0.01):
+    def __init__(self, X, Y, dimensions, activations, iterations=100, learning_rate=0.01, cost_func=""):
         self.X = X                  # each row is an example, each element in row-example corresponds to a input node value
         self.Y = Y                  # each row is an output example label, each element in output-row-label corresponds to a output nodes label value
         self.dimensions = dimensions  # [1, 5,5,5 1] number of nodes per layer including input to output layers
         self.activations = activations  # ["R", "R","R","R", "S"] defines the activation used for each layer via the index, every layer as activation func
         self.iterations = iterations
         self.learning_rate = learning_rate
+        self.cost_func = cost_func
 
         self.W = {}  # dict where each key is layer-index and its value is a matrix of weights for that index-layer
         self.b = {}  # dict where key is layer-indx and its value is a matrix of biases for that index-layer
@@ -16,7 +18,7 @@ class Model:
         self.dW = {}
         self.db = {}
 
-    # Activation Functions
+    # **********Activation Functions**********
     def ReLU_forward(self, Z):
         return np.maximum(0, Z)
     def ReLU_backward(self, Z, dA=1):
@@ -29,7 +31,7 @@ class Model:
         s = self.Sigmoid_forward(Z)
         dZ = s * (1 - s)
         return dA * dZ
-    # Loss Functions
+    # **********Loss Functions**********
     def binary_cross_entropy_forward(self, AL, Y):
         epsilon = 1e-15  
         AL = np.clip(AL, epsilon, 1 - epsilon)  # clip activations of last-layer min=epsilon max=1-epsilon, if values in AL are less than min it becomes min if values are more than max it becomes max
@@ -41,6 +43,10 @@ class Model:
             AL = np.clip(AL, epsilon, 1 - epsilon)  
             dAL = - (Y / AL) + (1 - Y) / (1 - AL)   # derivative of 
             return dAL / Y.shape[0]
+    def mse_forward(self, AL, Y):
+        return np.mean(np.square(AL - Y))
+    def mse_backward(self, AL, Y):
+        return 2 * (AL - Y) / Y.shape[0]
 
     def prepare_network(self):
         # initalize weights/biases
@@ -71,29 +77,33 @@ class Model:
 
     def forward_propagation(self):
         self.intermed = []
-        # print(f"{self.W.keys()=}")
-        # print(f"{self.b.keys()=}")
         A_prev = self.X
 
-        # iterate from 1st layer not input because input layer doesnt have Z & A
         for layer_indx in range(1, len(self.dimensions)):
-            #print(f"-------Layer #{layer_indx}-------")
+            # Store the input A_prev before computing Z
+            cur_A_prev = A_prev
+            
             # weighted-sum
             Z = np.dot(A_prev, self.W[layer_indx]) + self.b[layer_indx]
-            #print(f"{Z=}, {Z.shape}")
+            
             # activation function
             if self.activations[layer_indx] == "R":
                 A = self.ReLU_forward(Z)
-                #print(f"relu: {A=}, {A.shape}")
             if self.activations[layer_indx] == "S":
                 A = self.Sigmoid_forward(Z)
-                #print(f"sig: {A=}, {A.shape}")
-            # set next layers previous-activation to be cur-activation
+                
+            # Store the ORIGINAL A_prev, not the new A
+            self.intermed.append({
+                "layer": layer_indx,
+                "A_prev": cur_A_prev,  # Store the input A_prev
+                "W": self.W[layer_indx],
+                "b": self.b[layer_indx],
+                "Z": Z
+            })
+            
+            # Update A_prev for next layer
             A_prev = A
-            # print(f"{layer_indx=}")
-            self.intermed.append({"layer":layer_indx,"A_prev": A_prev,"W": self.W[layer_indx], "b": self.b[layer_indx], "Z": Z})
         
-        # return the last value holded by A which is the activations of last-layer
         return A
     
         
@@ -101,11 +111,16 @@ class Model:
         self.prepare_network()
         # training main loop
         for iter_num in range(1, self.iterations):
-            # propagate data forward through network
+            # propagate data forward through network, final activations also predictions.
             AL = self.forward_propagation()
             #print(f"AL: {AL.shape} {AL}")
 
-            cost = self.binary_cross_entropy_forward(AL, self.Y)
+            # cost = self.binary_cross_entropy_forward(AL, self.Y)
+            if self.cost_func == "binary_cross":
+                cost = self.binary_cross_entropy_forward(AL, self.Y)
+            if self.cost_func == "mse":
+                cost = self.mse_forward(AL, self.Y)
+
 
             self.dW, self.db = self.backward_propagation(AL, self.Y)
 
@@ -116,7 +131,10 @@ class Model:
     def backward_propagation(self, AL, Y):
         self.dW, self.db = self.reset_grads()
         # derivative of cost-func respect to final activation, make Y shape shape as AL/
-        dA_prev = self.binary_cross_entropy_backward(AL, Y.reshape(AL.shape)) 
+        if self.cost_func == "binary_cross":
+            dA_prev = self.binary_cross_entropy_backward(AL, Y.reshape(AL.shape)) 
+        if self.cost_func == "mse":
+            dA_prev = self.mse_backward(AL, Y.reshape(AL.shape)) 
 
         # iterate from last-layer-indx to 1st-layer, excluding input-layer-0 doesnt need backprop
         for layer_indx in range(len(self.dimensions)-1, 0, -1):
@@ -133,27 +151,42 @@ class Model:
         return self.dW, self.db
 
     def layer_backward(self, dA, A_prev, W, b, Z, layer_indx):
-        m = A_prev.shape[0]
+        m = A_prev.shape[0]  # number of examples
+        
+        # Calculate dZ based on activation function
         if self.activations[layer_indx] == "R":
             dZ = self.ReLU_backward(Z, dA) 
         if self.activations[layer_indx] == "S":
             dZ = self.Sigmoid_backward(Z, dA)
         
-        print(f"Layer {layer_indx}: dZ.shape = {dZ.shape}, A_prev.shape = {A_prev.shape}")
-
-        dW = 1 / m * np.dot(A_prev.T, dZ)               # compute derivative of loss respect to weights of cur-layer
-        print(f"{layer_indx=} - {dW.shape=} - {dZ.shape=}")
-        db = 1 / m * np.sum(dZ, axis=0, keepdims=True)  # compute derivative of loss respect to bias of cur-layer
-        dA_prev = np.dot(dZ, W.T)                       # compute derivative of loss respect to activation of previous-layer
+        # Calculate gradients
+        # A_prev should have correct shape from stored intermediate values
+        dW = 1 / m * np.dot(A_prev.T, dZ)
+        db = 1 / m * np.sum(dZ, axis=0)
+        dA_prev = np.dot(dZ, W.T)
+        
+        # Validation checks
+        expected_dW_shape = W.shape
+        if dW.shape != expected_dW_shape:
+            raise ValueError(f"Layer {layer_indx}: dW shape {dW.shape} doesn't match W shape {expected_dW_shape}")
+        
+        # print(f"layer_backward(): layer_indx={layer_indx}")
+        # print(f"  A_prev shape: {A_prev.shape}")
+        # print(f"  dZ shape: {dZ.shape}")
+        # print(f"  W shape: {W.shape}")
+        # print(f"  dW shape: {dW.shape}")
+        # print(f"  dA_prev shape: {dA_prev.shape}")
+        
         return dA_prev, dW, db
     
     def optimizer_update(self):
         # iterate from 1st-layer to last-layer because input-layer doesnt have weights to update
         for key, val in self.dW.items():
-                print(f"dW-{key=}, {val.shape=}")
+            pass
+            #print(f"dW-{key=}, {val.shape=}")
 
         for layer_indx in range(1, len(self.dimensions)):
-            print(f"Layer {layer_indx}: W.shape = {self.W[layer_indx].shape}, dW.shape = {self.dW[layer_indx].shape}")
+            #print(f"Layer {layer_indx}: W.shape = {self.W[layer_indx].shape}, dW.shape = {self.dW[layer_indx].shape}")
             self.W[layer_indx] -= self.learning_rate * self.dW[layer_indx]
             self.b[layer_indx] -= self.learning_rate * self.db[layer_indx]
         return self.W, self.b  # returning for precaution
@@ -163,24 +196,91 @@ class Model:
             n = self.dimensions[layer_indx-1] # number of nodes in previous-layer
             m = self.dimensions[layer_indx]   # number of nodes in current-layer
             self.dW[layer_indx]  = np.zeros((n, m))
+            # print(f"reset layer: {layer_indx} - {self.dW[layer_indx].shape}")
             self.db[layer_indx] = np.zeros(m)
         return self.dW, self.db
 
     def get_cache(self, layer_indx):
+        # Add validation
         for cache in self.intermed:
             if cache["layer"] == layer_indx:
+                # Validate shapes before returning
+                W_shape = cache["W"].shape
+                A_prev_shape = cache["A_prev"].shape
+                if A_prev_shape[1] != W_shape[0]:
+                    raise ValueError(f"Layer {layer_indx}: A_prev shape {A_prev_shape} incompatible with W shape {W_shape}")
                 return cache
+        raise ValueError(f"Cache not found for layer {layer_indx}")
+    
+    def predict(self, X_new):
+        X_og = X_new
+        self.X = X_new
+        predictions = self.forward_propagation()
+        self.X = X_og
+        return predictions
+    
+
+# APPLICATIONS
+def generate_sine_data(num_points=1000, noise_factor=0.1):
+    # Generate x values between -2π and 2π
+    X = np.linspace(-2*np.pi, 2*np.pi, num_points).reshape(-1, 1)
+    
+    # Generate clean sine curve
+    Y_clean = np.sin(X)
+    
+    # Add random noise
+    noise = np.random.normal(0, noise_factor, Y_clean.shape)
+    Y = Y_clean + noise
+    
+    return X, Y
+
+def plot_sine_predictions(model, X_train, Y_train, num_test_points=200):
+    """
+    Plot the training data and model predictions
+    """
+    # Generate smooth x values for plotting the true sine curve
+    X_test = np.linspace(-2*np.pi, 2*np.pi, num_test_points).reshape(-1, 1)
+    Y_true = np.sin(X_test)
+    
+    # Get model predictions
+    Y_pred = model.predict(X_test)
+    
+    # Create the plot
+    plt.figure(figsize=(12, 6))
+    plt.scatter(X_train, Y_train, c='blue', alpha=0.2, label='Training Data (with noise)')
+    plt.plot(X_test, Y_true, 'g-', label='True Sine Curve')
+    plt.plot(X_test, Y_pred, 'r--', label='Model Predictions')
+    plt.xlabel('x')
+    plt.ylabel('sin(x)')
+    plt.title('Sine Curve: Training Data vs Model Predictions')
+    plt.legend()
+    plt.grid(True)
+    plt.show()
 
 if __name__ == "__main__":
     # XOR function
-    X = [[0.1, 0.1], [0.1, 0.2], [0.2, 0.2], [0.2,0.3], [0.3,0.3], [0.4,0.5], [0.4,0.4], [0.5,0.6], [0.6,0.6], [0.6,0.7]]
-    Y = [[0], [1], [0], [1], [0], [1], [0], [1], [0], [1]]
     X1 = [[0, 0], [0, 1], [1, 0], [1, 1]]
     Y1 = [[0], [1], [1], [0]]
     dims = [2, 3, 3, 1]
     acts = ["R","R","R","S"]
-    net = Model(np.array(X1), np.array(Y1), dims, acts, iterations=5, learning_rate=0.01)
+    net = Model(np.array(X1), np.array(Y1), dims, acts, iterations=1000, learning_rate=0.1, cost_func="binary_cross")
     net.train()
+    preds = net.predict(X1)
+    print(f"Net predictions: {preds} actual: {Y1}")
+
+    # SINE CURVE
+    # X_train, Y_train = generate_sine_data(num_points=1000, noise_factor=0.1)
+    # dims = [1, 20, 20, 20, 1]  # 3 hidden layers with 20 nodes each
+    # acts = ["R", "R", "R", "R", "R"]  # Using ReLU throughout since we're not doing classification
+    # net = Model(X_train, Y_train, dims, acts, iterations=1000,learning_rate=0.0075)
+    
+    # net.train()
+    # plot_sine_predictions(net, X_train, Y_train)
+    
+    # Y_pred = net.predict(X_train)
+    # mse = np.mean((Y_train - Y_pred)**2)
+    # print(f"\nMean Squared Error on training data: {mse:.6f}")
+
 
 """
 TODO:

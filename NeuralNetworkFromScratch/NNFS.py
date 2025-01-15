@@ -65,27 +65,6 @@ class Initializers:
     def normal(prev_layer_size, layer_size):
         return np.random.randn(prev_layer_size, layer_size)
 
-    @staticmethod
-    def uniform(prev_layer_size, layer_size):
-        return np.random.uniform(-1, 1, (prev_layer_size, layer_size))
-
-    @staticmethod
-    def glorot_normal(prev_layer_size, layer_size):
-        return np.random.randn(prev_layer_size, layer_size) * np.sqrt(2 / (layer_size + prev_layer_size))
-
-    @staticmethod
-    def glorot_uniform(prev_layer_size, layer_size):
-        limit = np.sqrt(6 / (layer_size + prev_layer_size))
-        return np.random.uniform(-limit, limit, (prev_layer_size, layer_size))
-
-    @staticmethod
-    def he_normal(prev_layer_size, layer_size):
-        return np.random.randn(prev_layer_size, layer_size) * np.sqrt(2 / prev_layer_size)
-
-    @staticmethod
-    def he_uniform(prev_layer_size, layer_size):
-        limit = np.sqrt(6 / prev_layer_size)
-        return np.random.uniform(-limit, limit, (prev_layer_size, layer_size))
 
 class Loss:
     """
@@ -171,90 +150,6 @@ class Optimizers:
                 b[layer] -= self.learning_rate * db[layer]    # grad is dictionary
 
             return W, b
-        
-    class Momentum:
-
-        def __init__(self, learning_rate=0.01, beta=0.9):
-            self.learning_rate = learning_rate
-            self.beta = beta
-            self.name = "Momentum"
-
-        def configure(self, W, b, VdW, Vdb, layers):
-            VdW = []        
-            Vdb = []
-            for layer in range(len(layers)):        # iterate thourgh eachlayer and initalize veloctiy of cur-layer to that same shape as parameters of cur-layer
-                VdW.append(np.zeros(W[layer].shape))
-                Vdb.append(np.zeros(b[layer].shape))
-            return W, b, VdW, Vdb
-
-        def update(self, W, b, dW, db, VdW, Vdb, layers):
-            for layer in range(len(layers)):        # iterate each layer-indx and update velocites using beta-HPP
-                VdW[layer] = self.beta * VdW[layer] + (1 - self.beta) * dW[layer] 
-                Vdb[layer] = self.beta * Vdb[layer] + (1 - self.beta) * db[layer]
-
-                W[layer] -= self.learning_rate * VdW[layer]
-                b[layer] -= self.learning_rate * Vdb[layer]
-
-            return W, b, VdW, Vdb
-        
-    class RMS_Prop:
-
-        def __init__(self, learning_rate=0.01, beta=0.9):
-            self.learning_rate = learning_rate
-            self.beta = beta
-            self.name = "RMS_Prop"
-            self.epsilon = 1e-9
-
-        def configure(self, W, b, SdW, Sdb, layers):
-            SdW = []
-            Sdb = []
-            for layer_indx in range(len(layers)):
-                SdW.append(np.zeros(W[layer_indx].shape))
-                Sdb.append(np.zeros(b[layer_indx].shape))
-            return W, b, SdW, Sdb
-
-        def update(self, W, b, dW, db, SdW, Sdb, layers):
-            for layer_indx in range(len(layers)):
-                SdW[layer_indx] = self.beta*SdW[layer_indx] + (1-self.beta)*(dW[layer_indx]**2)
-                Sdb[layer_indx] = self.beta*Sdb[layer_indx] + (1-self.beta)*(db[layer_indx]**2)
-
-                W[layer_indx] -= self.learning_rate * (dW[layer_indx] / np.sqrt(SdW[layer_indx] + self.epsilon))
-                b[layer_indx] -= self.learning_rate * (db[layer_indx] / np.sqrt(Sdb[layer_indx] + self.epsilon))
-            return W, b, SdW, Sdb
-        
-    class Adam:
-
-        def __init__(self, learning_rate=0.01, beta1=0.9, beta2=0.999):
-            self.leanring_rate = learning_rate
-            self.beta1 = beta1  # momentum beta
-            self.beta2 = beta2  # RMS beta
-            self.epsilon = 1e-9
-            self.name = "Adam"
-
-        def configure(self, W, b, VdW, SdW, Vdb, Sdb, layers):
-            VdW = []
-            Vdb = []
-            SdW = []
-            Sdb = []
-            for layer_indx in range(len(layers)):
-                VdW.append(np.zeros(W[layer_indx].shape))
-                Vdb.append(np.zeros(b[layer_indx].shape))
-                SdW.append(np.zeros(W[layer_indx].shape))
-                Sdb.append(np.zeros(b[layer_indx].shape))
-            return W, b, VdW, Vdb, SdW, Sdb
-
-        def update(self, W, b, dW, db, VdW, SdW, Vdb, Sdb, layers):
-            for layer_indx in range(len(layers)):
-                VdW[layer_indx] = self.beta1 * VdW[layer_indx] + (1 - self.beta1) * dW[layer_indx] # Update weight velocities
-                Vdb[layer_indx] = self.beta1 * Vdb[layer_indx] + (1 - self.beta1) * db[layer_indx] # Update bias velocities
-                SdW[layer_indx] = self.beta2 * SdW[layer_indx] + (1 - self.beta2) * np.square(dW[layer_indx]) # Update weight LR scalers
-                Sdb[layer_indx] = self.beta2 * Sdb[layer_indx] + (1 - self.beta2) * np.square(db[layer_indx]) # Update bias LR scalers
-                
-                W[layer_indx] -= self.learning_rate * VdW[layer_indx] / (np.sqrt(SdW[layer_indx]) + self.epsilon) # Update weights
-                b[layer_indx] -= self.learning_rate * Vdb[layer_indx] / (np.sqrt(Sdb[layer_indx]) + self.epsilon) # Update biases
-                
-            return W, b, dW, db, VdW, SdW, Vdb, Sdb
-
 
 class Layer:
     """
@@ -311,12 +206,6 @@ class NeuralNetwork:
         # check for all optimization methods and initlize parameters
         if self.optimizer.name == "SGD": 
             self.W, self.b = self.optimizer.configure(self.W, self.b, self.layers)  # add some stuff to parameters
-        if self.optimizer.name == "Momentum":
-            self.W, self.b, self.VdW, self.Vdb = self.optimizer.configure(self.W, self.b, self.VdW, self.Vdb, self.layers)  # add some stuff to parameters
-        if self.optimizer.name == "RMS_Prop":
-            self.W, self.b, self.SdW, self.Sdb = self.optimizer.configure(self.W, self.b, self.SdW, self.Sdb, self.layers)
-        if self.optimizer.name == "Adam":
-            self.W, self.b, self.VdW, self.Vdb, self.SdW, self.Sdb = self.optimizer.configure(self.W, self.b, self.VdW, self.SdW, self.Vdb, self.Sdb, self.layers)
         
 
     def train(self, X, Y, epochs, learning_rate=0.001, batch_size=None, print_cost=True, D_out_real=None, D_out_fake=None, Y_fake=None, input_type=""):
@@ -331,36 +220,18 @@ class NeuralNetwork:
         
         # MAIN LOOP
         for i in range(1, epochs + 1):
-            x_batches = np.array_split(X, num_examples // batch_size, axis=0)
-            y_batches = np.array_split(Y, num_examples // batch_size, axis=0)
+            
+            AL = self.forward(X)                  # feed x-data through network
 
-            for x, y in zip(x_batches, y_batches):
-                
-                AL = self.forward(x)                  # feed x-data through network
+            cost = self.cost_func.forward(AL, Y)  # compute cost
+    
+            self.backward(AL, Y)  # get gradients, grad = [{'dW': dW, 'db': db}, {}, {}], each dictionary is for a layer
 
-                if self.is_gan_model == "":
-                    cost = self.cost_func.forward(AL, y)  # compute cost
-                if self.is_gan_model == "G":
-                    cost = self.cost_func.forward(AL, Y, self.D_out_fake)
-                if self.is_gan_model == "D":
-                    cost = self.cost_func.forward(AL, Y, self.D_out_real, self.D_out_fake)
+            self.W, self.b = self.optimizer.update(self.W, self.b, self.dW, self.db, self.layers)
 
-                self.backward(AL, y)  # get gradients, grad = [{'dW': dW, 'db': db}, {}, {}], each dictionary is for a layer
+            self.costs.append(cost)
 
-                if self.optimizer.name == "SGD":
-                    self.W, self.b = self.optimizer.update(self.W, self.b, self.dW, self.db, self.layers)
-                if self.optimizer.name == "Momentum":
-                    self.W, self.b, self.VdW, self.Vdb = self.optimizer.update(self.W, self.b, self.dW, self.db, self.VdW, self.Vdb, self.layers)
-                if self.optimizer.name == "RMS_Prop":
-                    self.W, self.b, self.SdW, self.Sdb = self.optimizer.update(self.W, self.b, self.dW, self.db, self.SdW, self.Sdb, self.layers)
-                if self.optimizer.name == "Adam":
-                    self.W, self.b, self.dW, self.db, self.VdW, self.SdW, self.Vdb, self.Sdb = self.optimizer.update(self.W, self.b, self.dW, self.db, self.VdW, self.SdW, self.Vdb, self.Sdb, self.layers)
-                
-
-                self.costs.append(cost)
-
-            if print_cost and i%100 == 0:
-                print(f"Cost on epoch {i}: {round(cost.item(), 5)}")
+            print(f"Cost on epoch {i}: {round(cost.item(), 5)}")
 
     def initialize_weights_biases(self, input_size):
         layer_sizes = [input_size]  # make sure initial size is there because there is no layer-object for input-layer
@@ -394,12 +265,7 @@ class NeuralNetwork:
 
         # derivative of prev-layer activations given prediction-matrix and reshaped labes
         dA_prev = 0
-        if self.is_gan_model == "":
-            dA_prev = self.cost_func.backward(AL, Y.reshape(AL.shape))
-        if self.input_type == "real":
-            dA_prev = self.cost_func.backward(Y, self.D_out_real, self.D_out_fake, self.Y_fake, input_type="real")
-        if self.input_type == "fake":
-            dA_prev = self.cost_func.backward(Y, self.D_out_real, self.D_out_fake, self.Y_fake, input_type="fake")
+        dA_prev = self.cost_func.backward(AL, Y.reshape(AL.shape))
 
         # iterate through layers backward
         for layer_indx in reversed(range(len(self.layers))):
@@ -472,17 +338,17 @@ def sine_curve():
     X_train = X_train.reshape(-1, 1)
     print(f"{X_train=}")
     model = NeuralNetwork()
-    model.add(Layer(num_nodes=10, activation=ReLU(), initializer=Initializers.glorot_uniform)) # this is the 1st layer not input-layer, input-layer does not have activation
-    model.add(Layer(num_nodes=10, activation=ReLU(), initializer=Initializers.glorot_uniform))
-    model.add(Layer(num_nodes=10, activation=ReLU(), initializer=Initializers.glorot_uniform))
-    model.add(Layer(num_nodes=10, activation=ReLU(), initializer=Initializers.glorot_uniform))
-    model.add(Layer(num_nodes=10, activation=ReLU(), initializer=Initializers.glorot_uniform))
-    model.add(Layer(num_nodes=10, activation=ReLU(), initializer=Initializers.glorot_uniform))
-    model.add(Layer(num_nodes=10, activation=ReLU(), initializer=Initializers.glorot_uniform))
-    model.add(Layer(num_nodes=1, activation=Linear(), initializer=Initializers.glorot_uniform)) # this is output-layer activation, can be softmax, sigmoid, tanh
+    model.add(Layer(num_nodes=10, activation=ReLU(), initializer=Initializers.normal)) # this is the 1st layer not input-layer, input-layer does not have activation
+    model.add(Layer(num_nodes=10, activation=ReLU(), initializer=Initializers.normal))
+    model.add(Layer(num_nodes=10, activation=ReLU(), initializer=Initializers.normal))
+    model.add(Layer(num_nodes=10, activation=ReLU(), initializer=Initializers.normal))
+    model.add(Layer(num_nodes=10, activation=ReLU(), initializer=Initializers.normal))
+    model.add(Layer(num_nodes=10, activation=ReLU(), initializer=Initializers.normal))
+    model.add(Layer(num_nodes=10, activation=ReLU(), initializer=Initializers.normal))
+    model.add(Layer(num_nodes=1, activation=Linear(), initializer=Initializers.normal)) # this is output-layer activation, can be softmax, sigmoid, tanh
     # number of input nodes is specified here sine curve takes in 1 input x and outputs 1 output y.
-    model.setup(cost_func=Loss.MSE, input_size=1, optimizer=Optimizers.Adam(learning_rate=0.01))
-    model.train(X_train, Y_train, epochs=500, learning_rate=0.01, batch_size=num_samples, print_cost=True)
+    model.setup(cost_func=Loss.MSE, input_size=1, optimizer=Optimizers.SGD(learning_rate=0.001))
+    model.train(X_train, Y_train, epochs=200,  batch_size=num_samples, print_cost=True)
     # # model.save("NeuralNetworkFromScratch/sample.json")
     # # model.load("NeuralNetworkFromScratch/sample.json")
     Y_pred = model.predict(X_train)  # [e1, e2, e3, e4], e4 = [n1, n2, n3]
@@ -502,15 +368,25 @@ def sine_curve():
     # print(Y_train)
     # print(Y_train.shape)
     
+def XOR_func():
+    X1 = np.array([[0, 0], [0, 1], [1, 0], [1, 1]])
+    Y1 = np.array([[0], [1], [1], [0]])
+    model = NeuralNetwork()
+    model.add(Layer(num_nodes=4, activation=ReLU(), initializer=Initializers.normal))
+    model.add(Layer(num_nodes=1, activation=Sigmoid(), initializer=Initializers.normal)) # this is output-layer activation, can be softmax, sigmoid, tanh
+    # number of input nodes is specified here sine curve takes in 1 input x and outputs 1 output y.
+    model.setup(cost_func=Loss.BinaryCrossEntropy, input_size=2, optimizer=Optimizers.SGD(learning_rate=0.1))
+    model.train(X1, Y1, epochs=1000,  batch_size=4, print_cost=True)
+
+    Y_pred = model.predict(X1) 
+    print(Y_pred)
                 
 if __name__ == "__main__":
 
-    # HARDCODED TASK - identify odds with 1. binary classification
-    # input format: each row is an example, each element in row-example is input node value. 
-    x_train = [[1], [2], [3], [4], [5], [6], [7], [8], [9], [10]]
-    y_train = [1, 0, 1, 0, 1, 0, 1, 0, 1, 0]
 
     sine_curve()
+
+    #XOR_func()
 
     
     
