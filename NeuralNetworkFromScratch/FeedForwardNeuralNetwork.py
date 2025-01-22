@@ -1,16 +1,19 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from sklearn.datasets import make_regression
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
 
 class Model:
 
-    def __init__(self, X, Y, dimensions, activations, iterations=100, learning_rate=0.01, cost_func=""):
+    def __init__(self, X, Y, dimensions, activations, iterations=1000, learning_rate=0.1, loss_type="binary_cross_entropy"):
         self.X = X                  # each row is an example, each element in row-example corresponds to a input node value
         self.Y = Y                  # each row is an output example label, each element in output-row-label corresponds to a output nodes label value
         self.dimensions = dimensions  # [1, 5,5,5 1] number of nodes per layer including input to output layers
         self.activations = activations  # ["R", "R","R","R", "S"] defines the activation used for each layer via the index, every layer as activation func
         self.iterations = iterations
         self.learning_rate = learning_rate
-        self.cost_func = cost_func
+        self.loss_type = loss_type
 
         self.W = {}  # dict where each key is layer-index and its value is a matrix of weights for that index-layer
         self.b = {}  # dict where key is layer-indx and its value is a matrix of biases for that index-layer
@@ -31,6 +34,10 @@ class Model:
         s = self.Sigmoid_forward(Z)
         dZ = s * (1 - s)
         return dA * dZ
+    def linear_forward(self, Z):
+        return Z
+    def linear_backward(self, Z, dA=1):
+        return dA
     # **********Loss Functions**********
     def binary_cross_entropy_forward(self, AL, Y):
         epsilon = 1e-15  
@@ -58,22 +65,6 @@ class Model:
             self.b[layer_indx] = np.random.rand(m)
             print(f"weights of layer-{layer_indx}: {self.W[layer_indx].shape}, bias: {self.b[layer_indx].shape}") # to check the shape of each layers weights
 
-        # preset weights for testing purposes
-        # self.W = {1: np.array(
-        #     [[-0.15711978,  1.91467883,  1.30879812],
-        #     [-0.40953811, -1.25633144,  1.39848743]]), 
-                
-        #     2: np.array(
-        #     [[ 1.30957982, -0.58575335,  0.27496437],
-        #     [ 0.0615504 ,  0.38399249,  0.67944275],
-        #     [ 1.27965209,  0.87114635, -0.02316647]]), 
-
-        #     3: np.array(
-        #     [[-0.69113884],
-        #     [ 0.18692256],
-        #     [-1.07356081]])
-        #     }
-        # self.b = {1: np.array([0.38129563, 0.31356892, 0.16569252]), 2: np.array([0.53641851, 0.26092846, 0.36984623]), 3: np.array([0.37719807])}
 
     def forward_propagation(self):
         self.intermed = []
@@ -87,6 +78,8 @@ class Model:
             Z = np.dot(A_prev, self.W[layer_indx]) + self.b[layer_indx]
             
             # activation function
+            if self.activations[layer_indx] == "L":
+                A = self.linear_forward(Z)
             if self.activations[layer_indx] == "R":
                 A = self.ReLU_forward(Z)
             if self.activations[layer_indx] == "S":
@@ -109,42 +102,50 @@ class Model:
         
     def train(self):
         self.prepare_network()
-        # training main loop
-        for iter_num in range(1, self.iterations):
-            # propagate data forward through network, final activations also predictions.
+        costs = []
+        
+        for iter_num in range(1, self.iterations + 1):
+            # Forward propagation
             AL = self.forward_propagation()
-            #print(f"AL: {AL.shape} {AL}")
-
-            # cost = self.binary_cross_entropy_forward(AL, self.Y)
-            if self.cost_func == "binary_cross":
+            
+            # Compute cost based on loss type
+            if self.loss_type == "binary_cross_entropy":
                 cost = self.binary_cross_entropy_forward(AL, self.Y)
-            if self.cost_func == "mse":
+            elif self.loss_type == "mse":
                 cost = self.mse_forward(AL, self.Y)
-
-
-            self.dW, self.db = self.backward_propagation(AL, self.Y)
-
+            
+            # Backward propagation
+            if self.loss_type == "binary_cross_entropy":
+                dAL = self.binary_cross_entropy_backward(AL, self.Y)
+            elif self.loss_type == "mse":
+                dAL = self.mse_backward(AL, self.Y)
+                
+            self.dW, self.db = self.backward_propagation(AL, self.Y, dAL)
+            
+            # Update parameters
             self.W, self.b = self.optimizer_update()
-            print(f"Cost #{iter_num} is {cost}")
+            
+            if iter_num % 100 == 0:  # Print every 100 iterations
+                print(f"Cost #{iter_num} is {cost}")
+            costs.append(cost)
+            
+            # Early stopping if cost is not changing
+            # if len(costs) > 10 and np.abs(costs[-1] - costs[-2]) < 1e-10:
+            #     print("Cost stopped changing. Training complete.")
+            #     break
+        
+        return costs
 
 
-    def backward_propagation(self, AL, Y):
+    def backward_propagation(self, AL, Y, dAL):
+        """Modified to accept dAL as parameter"""
         self.dW, self.db = self.reset_grads()
-        # derivative of cost-func respect to final activation, make Y shape shape as AL/
-        if self.cost_func == "binary_cross":
-            dA_prev = self.binary_cross_entropy_backward(AL, Y.reshape(AL.shape)) 
-        if self.cost_func == "mse":
-            dA_prev = self.mse_backward(AL, Y.reshape(AL.shape)) 
-
-        # iterate from last-layer-indx to 1st-layer, excluding input-layer-0 doesnt need backprop
+        dA_prev = dAL  # Use the passed dAL instead of computing it
+        
         for layer_indx in range(len(self.dimensions)-1, 0, -1):
-            # get the cache we stored for cur-layer in forward-prop
             cache = self.get_cache(layer_indx)
-            # unpack cache and get A_prev, W, b, Z used for the cur-layer
             A_prev, W, b, Z = cache["A_prev"], cache["W"], cache["b"], cache["Z"]
-            # compute gradients of cur-layer, pass in prev-layer-dA and set it for next-layer
             dA_prev, dW, db = self.layer_backward(dA_prev, A_prev, W, b, Z, layer_indx)
-            # set save gradients of cur-layer
             self.dW[layer_indx] = dW
             self.db[layer_indx] = db
         
@@ -154,6 +155,8 @@ class Model:
         m = A_prev.shape[0]  # number of examples
         
         # Calculate dZ based on activation function
+        if self.activations[layer_indx] == "L":
+            dZ = self.linear_backward(Z, dA)
         if self.activations[layer_indx] == "R":
             dZ = self.ReLU_backward(Z, dA) 
         if self.activations[layer_indx] == "S":
@@ -222,34 +225,31 @@ class Model:
 
 # APPLICATIONS
 def generate_sine_data(num_points=1000, noise_factor=0.1):
-    # Generate x values between -2π and 2π
-    X = np.linspace(-2*np.pi, 2*np.pi, num_points).reshape(-1, 1)
+    X = np.linspace(0, 2*np.pi, num_points)
+    Y = np.sin(X) + 0.1 * np.random.randn(num_points)
     
-    # Generate clean sine curve
-    Y_clean = np.sin(X)
-    
-    # Add random noise
-    noise = np.random.normal(0, noise_factor, Y_clean.shape)
-    Y = Y_clean + noise
+    # Reshape for neural network input
+    X = X.reshape(-1, 1)
+    Y = Y.reshape(-1, 1)
     
     return X, Y
 
-def plot_sine_predictions(model, X_train, Y_train, num_test_points=200):
-    """
-    Plot the training data and model predictions
-    """
-    # Generate smooth x values for plotting the true sine curve
-    X_test = np.linspace(-2*np.pi, 2*np.pi, num_test_points).reshape(-1, 1)
+def plot_sine_predictions(net, X_train, Y_train, num_test_points=1000, Y_pred=None):
+    X_test = np.linspace(0, 2*np.pi, num_test_points).reshape(-1, 1)
     Y_true = np.sin(X_test)
     
     # Get model predictions
-    Y_pred = model.predict(X_test)
+    Y_pred = net.predict(X_test)
     
-    # Create the plot
+    # Create plot
     plt.figure(figsize=(12, 6))
-    plt.scatter(X_train, Y_train, c='blue', alpha=0.2, label='Training Data (with noise)')
-    plt.plot(X_test, Y_true, 'g-', label='True Sine Curve')
+    
+    # Plot training data
+    plt.scatter(X_train, Y_train, c='blue', alpha=0.3, label='Training Data')
+    
+    # Plot model predictions
     plt.plot(X_test, Y_pred, 'r--', label='Model Predictions')
+    
     plt.xlabel('x')
     plt.ylabel('sin(x)')
     plt.title('Sine Curve: Training Data vs Model Predictions')
@@ -257,32 +257,45 @@ def plot_sine_predictions(model, X_train, Y_train, num_test_points=200):
     plt.grid(True)
     plt.show()
 
+
 if __name__ == "__main__":
     # XOR function
-    X1 = [[0, 0], [0, 1], [1, 0], [1, 1]]
-    Y1 = [[0], [1], [1], [0]]
-    dims = [2, 3, 3, 1]
-    acts = ["R","R","R","S"]
-    net = Model(np.array(X1), np.array(Y1), dims, acts, iterations=1000, learning_rate=0.1, cost_func="binary_cross")
-    net.train()
-    preds = net.predict(X1)
-    print(f"Net predictions: {preds} actual: {Y1}")
-
-    # SINE CURVE
-    # X_train, Y_train = generate_sine_data(num_points=1000, noise_factor=0.1)
-    # dims = [1, 20, 20, 20, 1]  # 3 hidden layers with 20 nodes each
-    # acts = ["R", "R", "R", "R", "R"]  # Using ReLU throughout since we're not doing classification
-    # net = Model(X_train, Y_train, dims, acts, iterations=1000,learning_rate=0.0075)
-    
+    # X1 = [[0, 0], [0, 1], [1, 0], [1, 1]]
+    # Y1 = [[0], [1], [1], [0]]
+    # dims = [2, 3, 3, 1]
+    # acts = ["R","R","R","S"]
+    # net = Model(np.array(X1), np.array(Y1), dims, acts, iterations=100, learning_rate=0.1, loss_type="binary_cross_entropy")
     # net.train()
-    # plot_sine_predictions(net, X_train, Y_train)
+    # preds = net.predict(X1)
+    # print(f"Net predictions: {preds} actual: {Y1}")
+
+    # REGRESSION TASK
+    num_points=500
+    X_train, Y_train = generate_sine_data(num_points=num_points, noise_factor=0.1)
+    dims = [1, 100,50, 1]  
+    acts = ["R", "R", "R","L"] 
+    net = Model(X_train, Y_train, dims, acts, 
+           iterations=1500,
+           learning_rate=0.01,
+           loss_type="mse") 
     
-    # Y_pred = net.predict(X_train)
-    # mse = np.mean((Y_train - Y_pred)**2)
-    # print(f"\nMean Squared Error on training data: {mse:.6f}")
+    net.train()
+    Y_pred = net.predict(X_train)
+    print(f"{len(Y_pred)=}, {len(X_train)=}")
+    
+    #plot_sine_predictions(net, X_train, Y_train, num_test_points=num_points, Y_pred=Y_pred)
+    plt.figure(figsize=(8, 6))
+    plt.scatter(X_train, Y_train, label='Noisy Data', color='blue')
+    plt.plot(X_train, Y_pred, label='Predicted Curve', color='red')
+    plt.title('Fitting a Noisy Sine Curve with Neural Network')
+    plt.xlabel('X')
+    plt.ylabel('Y')
+    plt.legend()
+    plt.show()
+    
+    
 
-
-"""
+""" 
 TODO:
 - manually hand check backprop matrix dimensions
 STATUS:
