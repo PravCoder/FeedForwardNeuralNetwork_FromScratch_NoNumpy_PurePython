@@ -391,6 +391,44 @@ def iris_flower_example():
     for i in range(20):
         print(f"Predicted: {predicted_classes[i]}, True: {true_classes[i]}")
 
+def MNIST_example(): # takes 20+ mins to train
+    from sklearn.datasets import fetch_openml
+    from sklearn.model_selection import train_test_split
+    from sklearn.preprocessing import OneHotEncoder, StandardScaler  # input is 28*28 pixels 784, output is 0-9 digits 10 output nodes. 
+    import numpy as np
+    mnist = fetch_openml("mnist_784", version=1)
+    X = mnist.data / 255.0  # normalize
+    Y = mnist.target.astype(int).to_numpy()  # convert target to integers
+
+    # one-hot encode labels, but before resapce to 1d-vector
+    encoder = OneHotEncoder(sparse=False)
+    Y = encoder.fit_transform(Y.reshape(-1, 1))
+
+    X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.1, random_state=42)
+    # standerdize further
+    scaler = StandardScaler()
+    X_train = scaler.fit_transform(X_train)
+
+    dims = [X_train.shape[1], 128, 64, Y_train.shape[1]]  # Larger hidden layers for MNIST
+    acts = ["INPUT", "R", "R", "SM"]  # ReLU for hidden layers, Softmax for output
+
+    net = Model(np.array(X_train),np.array(Y_train),dims,acts,iterations=1000,  learning_rate=0.01, loss_type="categorical_cross_entropy")
+    net.train()
+
+    preds = net.predict(X_train)
+    predicted_classes = np.argmax(preds, axis=1)  # 1d-array where each element is index of output node with high problaity for each example
+    true_classes = np.argmax(Y_train, axis=1)     # 1d-array where each element is index of output node with highest value one hot encoding so 1, each element in 1d-arr is index of true label 1 for each example
+
+    accuracy = net.accuracy(X_train, Y_train)
+
+    print(f"X-shape : {X_train.shape}, Y-shape : {Y_train.shape}, predicted_classes_num_examples={len(predicted_classes)}") # (examples, input features), (examples output nodes)
+    print(f"Accuracy: {accuracy}%")
+
+    # print couple predictions
+    print("---Sample Predictions---:")
+    for i in range(20):
+        print(f"Predicted: {predicted_classes[i]}, True: {true_classes[i]}")
+
 
 if __name__ == "__main__":
     
@@ -402,7 +440,8 @@ if __name__ == "__main__":
     # sine_curve_example(500)
 
     # Multiclass classification
-    iris_flower_example()
+    # iris_flower_example()
+    MNIST_example()
     pass
     
     
@@ -432,4 +471,45 @@ self.W = {1: np.array(
 
 Biases
 self.b = {1: np.array([0.38129563, 0.31356892, 0.16569252]), 2: np.array([0.53641851, 0.26092846, 0.36984623]), 3: np.array([0.37719807])}
+
+
+MNIST: REUSLTS:
+dims: [784, 128, 64, 10]
+weights of layer-1: (784, 128), bias: (128,)
+weights of layer-2: (128, 64), bias: (64,)
+weights of layer-3: (64, 10), bias: (10,)
+Cost #100 is 8.115813034557128
+Cost #200 is 7.160840114407793
+Cost #300 is 6.473767163897253
+Cost #400 is 5.887431840376309
+Cost #500 is 5.224533040076349
+Cost #600 is 4.963438657293821
+Cost #700 is 4.311941083132232
+Cost #800 is 3.593084488301908
+Cost #900 is 3.3204185281900775
+Cost #1000 is 2.9953705194712796
+Correct examples: 46175/63000
+X-shape : (63000, 784), Y-shape : (63000, 10), predicted_classes_num_examples=63000
+Accuracy: 73.29365079365078%
+---Sample Predictions---:
+Predicted: 5, True: 8
+Predicted: 7, True: 7
+Predicted: 4, True: 6
+Predicted: 6, True: 5
+Predicted: 4, True: 4
+Predicted: 4, True: 4
+Predicted: 2, True: 2
+Predicted: 4, True: 1
+Predicted: 0, True: 4
+Predicted: 7, True: 7
+Predicted: 4, True: 4
+Predicted: 0, True: 0
+Predicted: 1, True: 1
+Predicted: 5, True: 8
+Predicted: 2, True: 2
+Predicted: 4, True: 4
+Predicted: 5, True: 8
+Predicted: 8, True: 9
+Predicted: 4, True: 4
+Predicted: 5, True: 6
 """
