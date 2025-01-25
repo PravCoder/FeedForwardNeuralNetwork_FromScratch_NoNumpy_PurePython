@@ -71,7 +71,7 @@ class Model:
         A_prev = self.X
 
         for layer_indx in range(1, len(self.dimensions)):
-            # Store the input A_prev before computing Z
+            # store the input A_prev before computing Z
             cur_A_prev = A_prev
             
             # weighted-sum
@@ -85,7 +85,7 @@ class Model:
             if self.activations[layer_indx] == "S":
                 A = self.Sigmoid_forward(Z)
                 
-            # Store the ORIGINAL A_prev, not the new A
+            # store the ORIGINAL A_prev, not the new A
             self.intermed.append({
                 "layer": layer_indx,
                 "A_prev": cur_A_prev,  # Store the input A_prev
@@ -94,10 +94,10 @@ class Model:
                 "Z": Z
             })
             
-            # Update A_prev for next layer
+            # update A_prev for next layer
             A_prev = A
         
-        return A
+        return A  # return activations of final layer
     
         
     def train(self):
@@ -105,16 +105,16 @@ class Model:
         costs = []
         
         for iter_num in range(1, self.iterations + 1):
-            # Forward propagation
+            # forward propagation
             AL = self.forward_propagation()
             
-            # Compute cost based on loss type
+            # compute cost based on loss type
             if self.loss_type == "binary_cross_entropy":
                 cost = self.binary_cross_entropy_forward(AL, self.Y)
             elif self.loss_type == "mse":
                 cost = self.mse_forward(AL, self.Y)
             
-            # Backward propagation
+            # backward propagation
             if self.loss_type == "binary_cross_entropy":
                 dAL = self.binary_cross_entropy_backward(AL, self.Y)
             elif self.loss_type == "mse":
@@ -122,7 +122,7 @@ class Model:
                 
             self.dW, self.db = self.backward_propagation(AL, self.Y, dAL)
             
-            # Update parameters
+            # update parameters
             self.W, self.b = self.optimizer_update()
             
             if iter_num % 100 == 0:  # Print every 100 iterations
@@ -138,7 +138,6 @@ class Model:
 
 
     def backward_propagation(self, AL, Y, dAL):
-        """Modified to accept dAL as parameter"""
         self.dW, self.db = self.reset_grads()
         dA_prev = dAL  # Use the passed dAL instead of computing it
         
@@ -221,59 +220,31 @@ class Model:
         predictions = self.forward_propagation()
         self.X = X_og
         return predictions
+
+    def accuracy(self, X_new, Y_new): # y-new is 2d-array each is row is example, in each row is labels for each output node
+        if self.loss_type == "binary_cross_entropy":
+            preds = self.predict(X_new)  # get predictions, has same structure as y-new.
+            preds_binary = (preds > 0.5).astype(int)  # goes through 2d-arr and convets probabilties to prediction 0/1 if its less/greater than preds
+            correct = np.sum(preds_binary == Y_new)  # element-wise comparison, counts all rows-examples wehre the binary
+            total = Y_new.shape[0]  # get total examples, number of rows
+            print(f"Correct examples: {correct}/{total}")
+            return (correct / total) * 100
     
 
 # APPLICATIONS
 def generate_sine_data(num_points=1000, noise_factor=0.1):
     X = np.linspace(0, 2*np.pi, num_points)
-    Y = np.sin(X) + 0.1 * np.random.randn(num_points)
-    
-    # Reshape for neural network input
+    Y = np.sin(X) + 0.1 * np.random.randn(num_points)    
     X = X.reshape(-1, 1)
     Y = Y.reshape(-1, 1)
     
     return X, Y
 
-def plot_sine_predictions(net, X_train, Y_train, num_test_points=1000, Y_pred=None):
-    X_test = np.linspace(0, 2*np.pi, num_test_points).reshape(-1, 1)
-    Y_true = np.sin(X_test)
-    
-    # Get model predictions
-    Y_pred = net.predict(X_test)
-    
-    # Create plot
-    plt.figure(figsize=(12, 6))
-    
-    # Plot training data
-    plt.scatter(X_train, Y_train, c='blue', alpha=0.3, label='Training Data')
-    
-    # Plot model predictions
-    plt.plot(X_test, Y_pred, 'r--', label='Model Predictions')
-    
-    plt.xlabel('x')
-    plt.ylabel('sin(x)')
-    plt.title('Sine Curve: Training Data vs Model Predictions')
-    plt.legend()
-    plt.grid(True)
-    plt.show()
-
-
-if __name__ == "__main__":
-    # XOR function
-    # X1 = [[0, 0], [0, 1], [1, 0], [1, 1]]
-    # Y1 = [[0], [1], [1], [0]]
-    # dims = [2, 3, 3, 1]
-    # acts = ["R","R","R","S"]
-    # net = Model(np.array(X1), np.array(Y1), dims, acts, iterations=100, learning_rate=0.1, loss_type="binary_cross_entropy")
-    # net.train()
-    # preds = net.predict(X1)
-    # print(f"Net predictions: {preds} actual: {Y1}")
-
-    # REGRESSION TASK
-    num_points=500
+def sine_curve_example(num_points): # optimal: 500 points, 0.0 lr, 1 100 50 1 dims, 1500 iterations.
+    #num_points=500
     X_train, Y_train = generate_sine_data(num_points=num_points, noise_factor=0.1)
     dims = [1, 100,50, 1]  
-    acts = ["R", "R", "R","L"] 
+    acts = ["INPUT", "R", "R","L"]   # first string is for placeholder input, then define hidden activations, then output layer activations.
     net = Model(X_train, Y_train, dims, acts, 
            iterations=1500,
            learning_rate=0.01,
@@ -282,16 +253,61 @@ if __name__ == "__main__":
     net.train()
     Y_pred = net.predict(X_train)
     print(f"{len(Y_pred)=}, {len(X_train)=}")
-    
-    #plot_sine_predictions(net, X_train, Y_train, num_test_points=num_points, Y_pred=Y_pred)
     plt.figure(figsize=(8, 6))
-    plt.scatter(X_train, Y_train, label='Noisy Data', color='blue')
-    plt.plot(X_train, Y_pred, label='Predicted Curve', color='red')
-    plt.title('Fitting a Noisy Sine Curve with Neural Network')
-    plt.xlabel('X')
-    plt.ylabel('Y')
+    plt.scatter(X_train, Y_train, label="Noisy Data", color="blue")
+    plt.plot(X_train, Y_pred, label="Predicted Curve", color="red")
+    plt.title("Fitting a Noisy Sine Curve with Neural Network")
+    plt.xlabel("X")
+    plt.ylabel("Y")
     plt.legend()
     plt.show()
+
+def xor_function_example():  # does better with simpliler topology still varying results due to random weight initialization
+    #np.random.seed(42)
+    X1 = [[0, 0], [0, 1], [1, 0], [1, 1]]
+    Y1 = [[0], [1], [1], [0]]
+    dims = [2, 2,5, 1]
+    acts = ["INPUT","R","R", "S"]
+    net = Model(np.array(X1), np.array(Y1), dims, acts, iterations=2000, learning_rate=0.1, loss_type="binary_cross_entropy")
+    net.train()
+    preds = net.predict(X1)
+    print(f"Net predictions: {preds} actual: {Y1}")
+
+def breast_cancer_example(): 
+    from sklearn.datasets import load_breast_cancer
+    from sklearn.model_selection import train_test_split
+    from sklearn.preprocessing import StandardScaler
+
+    data = load_breast_cancer()
+    X = data.data
+    Y = data.target.reshape(-1, 1)  # reshape to (n_samples, 1)
+    
+    scaler = StandardScaler()
+    X = scaler.fit_transform(X)
+    
+    X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.05)
+    
+    dims = [X_train.shape[1], 10, 10, 10, 5, 1]  
+    acts = ["INPUT", "R", "R", "R","R", "S"]     
+    
+    net = Model(X_train, Y_train, dims, acts, iterations=2000, learning_rate=0.1, loss_type="binary_cross_entropy")
+    net.train()
+    
+    preds = net.predict(X_train) # 2d-arr where each element is a examples predictions
+    preds_binary = (preds > 0.5).astype(int)  # convert probabilties into predictions 1 if greater than 0.5 and 0 if less than 0.5
+    print(f"First 10 Predictions: {preds_binary[:10].flatten()}")
+    print(f"First 10 Actual:      {Y_test[:10].flatten()}")
+    accuracy = net.accuracy(X_train, Y_train)
+    print(f"Accuracy: {accuracy}")
+
+if __name__ == "__main__":
+    
+    # Binary Classification Tasks
+    # xor_function_example()
+    breast_cancer_example()
+
+    # Regression Tasks
+    # sine_curve_example(500)
     
     
 
