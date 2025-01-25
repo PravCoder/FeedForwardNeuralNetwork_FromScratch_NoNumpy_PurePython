@@ -46,3 +46,50 @@ Z3 = np.dot(A2, W3) + b3
 print(f"{Z3=}, {Z3.shape}")
 A3 = Sigmoid_forward(Z3)
 print(f"{A3=}, {A3.shape}")
+
+
+def iris_flower_example():
+    from sklearn.datasets import load_iris
+    from sklearn.model_selection import train_test_split
+    from sklearn.preprocessing import OneHotEncoder
+    import numpy as np
+
+    # Load Iris dataset
+    iris = load_iris()
+    X = iris.data
+    Y = iris.target
+    
+    # Standardize features
+    scaler = StandardScaler()
+    X = scaler.fit_transform(X)
+    
+    # One-hot encode labels
+    encoder = OneHotEncoder(sparse=False)
+    Y = encoder.fit_transform(Y.reshape(-1, 1))
+    
+    # Split data
+    X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.05, random_state=42)
+    dims = [4, 10, 10, 3]  # Input layer (4 features), 2 hidden layers, output layer (3 classes)
+    acts = ["INPUT","R", "R", "SM"]  # ReLU for hidden layers, Softmax for output
+    model = Model(X_train, Y_train, 
+                dimensions=dims, 
+                activations=acts, 
+                iterations=1000, 
+                learning_rate=0.01, 
+                loss_type="categorical_cross_entropy")
+
+    # Train model
+    costs = model.train()
+
+    # Plot training costs
+    import matplotlib.pyplot as plt
+    plt.figure(figsize=(10, 5))
+    plt.plot(costs)
+    plt.title('Training Costs')
+    plt.xlabel('Iterations')
+    plt.ylabel('Cost')
+    plt.show()
+
+    # Evaluate model
+    accuracy = model.accuracy(X_train, Y_train)
+    print(f"Model Accuracy: {accuracy:.2f}%")

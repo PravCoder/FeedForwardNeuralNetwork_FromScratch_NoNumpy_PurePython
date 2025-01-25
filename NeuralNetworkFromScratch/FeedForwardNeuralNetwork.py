@@ -38,7 +38,17 @@ class Model:
         return Z
     def linear_backward(self, Z, dA=1):
         return dA
+    def Softmax_forward(self, Z):
+        exp_values = np.exp(Z - np.max(Z, axis=1, keepdims=True)) # e to the power of every z-value in layer, subtract max for numerical stability
+        probabilities = exp_values / np.sum(exp_values, axis=1, keepdims=True) # sum all exp-values of every z-value in layer
+        return probabilities
+    def Softmax_backward(self, Z, Y):
+        A = self.Softmax_forward(Z)  
+        dZ = A - Y 
+        return dZ
+    
     # **********Loss Functions**********
+    # Binary Cross Entropy
     def binary_cross_entropy_forward(self, AL, Y):
         epsilon = 1e-15  
         AL = np.clip(AL, epsilon, 1 - epsilon)  # clip activations of last-layer min=epsilon max=1-epsilon, if values in AL are less than min it becomes min if values are more than max it becomes max
@@ -50,10 +60,22 @@ class Model:
             AL = np.clip(AL, epsilon, 1 - epsilon)  
             dAL = - (Y / AL) + (1 - Y) / (1 - AL)   # derivative of 
             return dAL / Y.shape[0]
+    # Mean-Squared-Error
     def mse_forward(self, AL, Y):
         return np.mean(np.square(AL - Y))
     def mse_backward(self, AL, Y):
         return 2 * (AL - Y) / Y.shape[0]
+    # Categorical Cross Entropy
+    def categorical_cross_entropy_forward(self, AL, Y):
+        epsilon = 1e-15  # to avoid log(0)
+        AL = np.clip(AL, epsilon, 1 - epsilon)  # clip prediction
+        loss = -np.sum(Y * np.log(AL)) / Y.shape[0]
+        return loss
+    def categorical_cross_entropy_backward(self, AL, Y):
+        epsilon = 1e-15  # To avoid division by 0
+        AL = np.clip(AL, epsilon, 1 - epsilon)  # clip predictions
+        dAL = -Y / AL
+        return dAL / Y.shape[0]
 
     def prepare_network(self):
         # initalize weights/biases
@@ -84,6 +106,8 @@ class Model:
                 A = self.ReLU_forward(Z)
             if self.activations[layer_indx] == "S":
                 A = self.Sigmoid_forward(Z)
+            if self.activations[layer_indx] == "SM":
+                A = self.Softmax_forward(Z)
                 
             # store the ORIGINAL A_prev, not the new A
             self.intermed.append({
@@ -113,12 +137,16 @@ class Model:
                 cost = self.binary_cross_entropy_forward(AL, self.Y)
             elif self.loss_type == "mse":
                 cost = self.mse_forward(AL, self.Y)
+            elif self.loss_type == "categorical_cross_entropy":
+                cost = self.categorical_cross_entropy_forward(AL, self.Y)
             
             # backward propagation
             if self.loss_type == "binary_cross_entropy":
                 dAL = self.binary_cross_entropy_backward(AL, self.Y)
             elif self.loss_type == "mse":
                 dAL = self.mse_backward(AL, self.Y)
+            elif self.loss_type == "categorical_cross_entropy":
+                dAL = self.categorical_cross_entropy_backward(AL, self.Y)
                 
             self.dW, self.db = self.backward_propagation(AL, self.Y, dAL)
             
@@ -160,6 +188,8 @@ class Model:
             dZ = self.ReLU_backward(Z, dA) 
         if self.activations[layer_indx] == "S":
             dZ = self.Sigmoid_backward(Z, dA)
+        if self.activations[layer_indx] == "SM":
+            dZ = self.Softmax_backward(Z, self.Y)
         
         # Calculate gradients
         # A_prev should have correct shape from stored intermediate values
@@ -215,18 +245,34 @@ class Model:
         raise ValueError(f"Cache not found for layer {layer_indx}")
     
     def predict(self, X_new):
+        self.X = X_new
         X_og = X_new
         self.X = X_new
         predictions = self.forward_propagation()
         self.X = X_og
         return predictions
-
+    
+    """
+    For regression accuracy is not the correct metric to use, instead use the 
+    """
     def accuracy(self, X_new, Y_new): # y-new is 2d-array each is row is example, in each row is labels for each output node
+        self.X = X_new
+        self.Y = Y_new
         if self.loss_type == "binary_cross_entropy":
             preds = self.predict(X_new)  # get predictions, has same structure as y-new.
             preds_binary = (preds > 0.5).astype(int)  # goes through 2d-arr and convets probabilties to prediction 0/1 if its less/greater than preds
             correct = np.sum(preds_binary == Y_new)  # element-wise comparison, counts all rows-examples wehre the binary
             total = Y_new.shape[0]  # get total examples, number of rows
+            print(f"Correct examples: {correct}/{total}")
+            return (correct / total) * 100
+        if self.loss_type == "categorical_cross_entropy":
+            preds = self.predict(X_new) 
+            # For multi-class classification, get the class index with the highest probability
+            preds_classes = np.argmax(preds, axis=1)  # 1d-array where each element is index of output node with high problaity for each example
+            true_classes = np.argmax(Y_new, axis=1)  # same with true-classes. 
+            # count correct predictions
+            correct = np.sum(preds_classes == true_classes) # compares 1D-lists where they are equal and counts it .
+            total = Y_new.shape[0]   # get number of examples
             print(f"Correct examples: {correct}/{total}")
             return (correct / total) * 100
     
@@ -271,7 +317,10 @@ def xor_function_example():  # does better with simpliler topology still varying
     net = Model(np.array(X1), np.array(Y1), dims, acts, iterations=2000, learning_rate=0.1, loss_type="binary_cross_entropy")
     net.train()
     preds = net.predict(X1)
+    accuracy = net.accuracy(np.array(X1), np.array(Y1))
     print(f"Net predictions: {preds} actual: {Y1}")
+    print(f"Accuracy: {accuracy}")
+    print(f"X-shape : {X1.shape}, Y-shape : {Y1.shape}")
 
 def breast_cancer_example(): 
     from sklearn.datasets import load_breast_cancer
@@ -280,8 +329,7 @@ def breast_cancer_example():
 
     data = load_breast_cancer()
     X = data.data
-    Y = data.target.reshape(-1, 1)  # reshape to (n_samples, 1)
-    
+    Y = data.target.reshape(-1, 1)  # reshape to (examples, 1), for 1 output node binary classification
     scaler = StandardScaler()
     X = scaler.fit_transform(X)
     
@@ -296,18 +344,66 @@ def breast_cancer_example():
     preds = net.predict(X_train) # 2d-arr where each element is a examples predictions
     preds_binary = (preds > 0.5).astype(int)  # convert probabilties into predictions 1 if greater than 0.5 and 0 if less than 0.5
     print(f"First 10 Predictions: {preds_binary[:10].flatten()}")
-    print(f"First 10 Actual:      {Y_test[:10].flatten()}")
+    print(f"First 10 Actual:      {Y_train[:10].flatten()}")
     accuracy = net.accuracy(X_train, Y_train)
+    print(f"X-shape : {X_train.shape}, Y-shape : {Y_train.shape}")
     print(f"Accuracy: {accuracy}")
+
+def iris_flower_example():
+    from sklearn.datasets import load_iris
+    from sklearn.model_selection import train_test_split
+    from sklearn.preprocessing import OneHotEncoder
+    import numpy as np
+    iris = load_iris()
+    X = iris.data  # Features
+    Y = iris.target  # Labels reshaped as a column vector
+
+    # standerdize features
+    print(f"before standerdizing features: {X[:5]}")  # this was causing cost to be constant/nan gradient explosion values to big
+    scaler = StandardScaler()
+    X = scaler.fit_transform(X)
+    print(f"after standerdizing features: {X[:5]}")
+
+    # one-hot encode labels, 1 class is 1 all other classes 0 for every example. 
+    encoder = OneHotEncoder(sparse=False)
+    Y = encoder.fit_transform(Y.reshape(-1,1))
+
+    X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.05)
+
+    dims = [X_train.shape[1], 10, 10, 10, Y_train.shape[1]]  # Input -> Hidden Layers -> Output
+    acts = ["INPUT", "R", "R", "R", "SM"]  # Activations: ReLU for hidden layers, Softmax for output
+
+    net = Model(np.array(X_train), np.array(Y_train), dims, acts, iterations=500, learning_rate=0.075, loss_type="categorical_cross_entropy")
+    net.train()
+    preds = net.predict(X_train)
+    print(f"{preds[:5]=}")
+    print(f"{Y_train[:5]=}")
+    predicted_classes = np.argmax(preds, axis=1)  # 1d-array where each element is index of output node with high problaity for each example
+    true_classes = np.argmax(Y_train, axis=1)     # 1d-array where each element is index of output node with highest value one hot encoding so 1, each element in 1d-arr is index of true label 1 for each example
+
+    accuracy = net.accuracy(X_train, Y_train)
+    print(f"X-shape : {X_train.shape}, Y-shape : {Y_train.shape}, predicted_classes_num_examples={len(predicted_classes)}") # (examples, input features), (examples output nodes)
+    print(f"Accuracy: {accuracy}%")
+
+
+    # print couple predictions
+    print("---Sample Predictions---:")
+    for i in range(20):
+        print(f"Predicted: {predicted_classes[i]}, True: {true_classes[i]}")
+
 
 if __name__ == "__main__":
     
     # Binary Classification Tasks
     # xor_function_example()
-    breast_cancer_example()
+    # breast_cancer_example()
 
     # Regression Tasks
     # sine_curve_example(500)
+
+    # Multiclass classification
+    iris_flower_example()
+    pass
     
     
 
