@@ -7,8 +7,8 @@ from sklearn.preprocessing import StandardScaler
 class Model:
 
     def __init__(self, X, Y, dimensions, activations, iterations=1000, learning_rate=0.1, loss_type="binary_cross_entropy"):
-        self.X = X                  # each row is an example, each element in row-example corresponds to a input node value
-        self.Y = Y                  # each row is an output example label, each element in output-row-label corresponds to a output nodes label value
+        self.X = X                  # each row is an example, each element in row-example corresponds to a input node value, (examples, features)
+        self.Y = Y                  # each row is an output example label, each element in output-row-label corresponds to a output nodes label value (example, output-node)
         self.dimensions = dimensions  # [1, 5,5,5 1] number of nodes per layer including input to output layers
         self.activations = activations  # ["R", "R","R","R", "S"] defines the activation used for each layer via the index, every layer as activation func
         self.iterations = iterations
@@ -437,11 +437,11 @@ if __name__ == "__main__":
     # breast_cancer_example()
 
     # Regression Tasks
-    # sine_curve_example(500)
+    sine_curve_example(500)
 
     # Multiclass classification
     # iris_flower_example()
-    MNIST_example()
+    # MNIST_example()
     pass
     
     
