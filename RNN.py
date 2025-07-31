@@ -39,11 +39,24 @@ class RNN:
         return vector
     
     def vectorize_training_data(self, X, Y):
+        # its a 3D-array where each element represents a one-hot-encoded-input-sequence, each of these sequences consists of one-hot-vectors of each token-char in that input-sequence
+        X_encoded = []              # (vocab-size, sequence-length, num-examples)
+
+        # iterate every input_sequnce in training-inputs
         for input_sequence in X:
             one_hot_sequence = []
+            # iterate every token-char in cur-input-sequence
             for token_indx in input_sequence:
+                # convert current token-char-index of cur-input-sequence into its one-hot-encoding and add it to this input-sequence list
                 one_hot_sequence.append(self.one_hot_encode_token_index(token_indx, len(self.vocabulary)))
-            
+                # this stacks each token-char in the shape of (vocab_size, input_sequence_length), where each column is one-hot-vector for that character in the input-sequnce
+
+            # after encoding all token-chars in this seuqnce add the list of all these encoding as a encoded input-sequence-example to X
+            X_encoded.append(np.hstack(one_hot_sequence))
+
+        # just indicies not one-hot encoding
+        Y_encoded = np.array(Y).flatten()
+        return X_encoded, Y_encoded
         
 
     def foward():
