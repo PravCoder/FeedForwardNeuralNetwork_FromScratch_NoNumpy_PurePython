@@ -7,7 +7,7 @@ class RNN:
         self.vocabulary = vocabulary                 # set of all unique tokens
         self.inp_seq_length = inp_seq_length
 
-    # given a token an char or word it returns a one-hot-encoding of that token based on the token to its vocab index and the size of the vocab
+    # given a token an char or word it returns a one-hot-encoding of that token based on the token to its vocab index and the size of the vocab, NOT USED
     def one_hot_encode(self, token, token_to_indx, vocab_size):
         vector = np.zeros((vocab_size, 1))
         vector[token_to_indx[token]] = 1       # get the index that the token represents in the vocab and set that index-position in the vector equal to ``
@@ -31,6 +31,20 @@ class RNN:
                     Y.append([ token_to_indx[output_token] ])              # convert the output-character into its index in vocab and put in the same list
 
         return X, Y     # ith element in X is the input of an example, and the ith elemnet of Y is the ouput-label of that example
+    
+    # given the index of a token of where it lives in vocab convert that into its one-hot-encoding-vector
+    def one_hot_encode_token_index(token_indx, vocab_size):
+        vector = np.zeros((vocab_size, 1))      # create vector of zeros of vocab size
+        vector[token_indx] = 1                  # set the index that that token is at in vocab equal to 1 in the vector
+        return vector
+    
+    def vectorize_training_data(self, X, Y):
+        for input_sequence in X:
+            one_hot_sequence = []
+            for token_indx in input_sequence:
+                one_hot_sequence.append(self.one_hot_encode_token_index(token_indx, len(self.vocabulary)))
+            
+        
 
     def foward():
         pass
@@ -106,3 +120,27 @@ if __name__ == "__main__":
     print("\nCREATE TRAINING EXAMPLES")
     print(X[0:5])
     print(Y[0:5])
+
+
+"""
+THIS IS FOR THE CREATE TRAINING EXAMPLES
+Example 1:
+Input: [19, 24, 17, 0] → ['t', 'y', 'r', 'a']
+Target: [13] → 'n'
+
+Example 2:
+Input: [24, 17, 0, 13] → ['y', 'r', 'a', 'n']
+Target: [13] → 'n'
+
+Example 3:
+Input: [17, 0, 13, 13] → ['r', 'a', 'n', 'n']
+Target: [14] → 'o'
+
+Example 4:
+Input: [0, 13, 13, 14] → ['a', 'n', 'n', 'o']
+Target: [18] → 's'
+
+Example 5:
+Input: [13, 13, 14, 18] → ['n', 'n', 'o', 's']
+Target: [0] → 'a'
+"""
