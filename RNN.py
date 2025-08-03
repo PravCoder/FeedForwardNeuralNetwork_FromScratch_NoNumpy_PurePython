@@ -33,7 +33,7 @@ class RNN:
         return X, Y     # ith element in X is the input of an example, and the ith elemnet of Y is the ouput-label of that example
     
     # given the index of a token of where it lives in vocab convert that into its one-hot-encoding-vector
-    def one_hot_encode_token_index(token_indx, vocab_size):
+    def one_hot_encode_token_index(self, token_indx, vocab_size):
         vector = np.zeros((vocab_size, 1))      # create vector of zeros of vocab size
         vector[token_indx] = 1                  # set the index that that token is at in vocab equal to 1 in the vector
         return vector
@@ -44,6 +44,7 @@ class RNN:
 
         # iterate every input_sequnce in training-inputs
         for input_sequence in X:
+            # stores all characters in this input-sequence but one-hot-encoded, so each elemnt is a on-ehot-encoding-list of that character in sequence
             one_hot_sequence = []
             # iterate every token-char in cur-input-sequence
             for token_indx in input_sequence:
@@ -129,10 +130,18 @@ if __name__ == "__main__":
     print(f"\nOne-hot encoding of a token: {oh_encoding_vector[0:5]}")
 
     # CREATE TRAINING EXAMPLES
-    X, Y = rnn.create_training_example(names=dinosaur_names, token_to_indx=token_to_indx)
     print("\nCREATE TRAINING EXAMPLES")
+    X, Y = rnn.create_training_example(names=dinosaur_names, token_to_indx=token_to_indx)
     print(X[0:5])
     print(Y[0:5])
+
+    # VECTORIZE TRAINING EXAMPLES
+    print("\nVECTORIZE TRAINING EXAMPLES")
+    X_encoded, Y_encoded = rnn.vectorize_training_data(X, Y)
+    print("X-Training-Example (single example here, the columns are each one-hot character of this single input seqeunce): ")
+    print(X_encoded[0])         
+    print("Y-Training-Example (all examples here): ")
+    print(Y_encoded)
 
 
 """
