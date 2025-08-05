@@ -4,6 +4,8 @@ import numpy as np
 class RNN:
 
     def __init__(self, vocabulary, inp_seq_length):
+        self.X = []
+        self.Y = []
         self.vocabulary = vocabulary                 # set of all unique tokens
         self.inp_seq_length = inp_seq_length
 
@@ -40,7 +42,11 @@ class RNN:
     
     def vectorize_training_data(self, X, Y):
         # its a 3D-array where each element represents a one-hot-encoded-input-sequence, each of these sequences consists of one-hot-vectors of each token-char in that input-sequence
-        X_encoded = []              # (vocab-size, sequence-length, num-examples)
+        X_encoded = []              # (vocab-size, inp-sequence-length, num-examples)
+
+        # an element in X_encoded is a input-sequnce, it is of shape (vocab_size, input_seq_length) for example (26, 4), 
+        # where each row represents a character in the vocabulary
+        # whwere each col represents a timestep in the input-sequence, we set the inp-seq-len to 4.
 
         # iterate every input_sequnce in training-inputs
         for input_sequence in X:
@@ -55,8 +61,11 @@ class RNN:
             # after encoding all token-chars in this seuqnce add the list of all these encoding as a encoded input-sequence-example to X
             X_encoded.append(np.hstack(one_hot_sequence))
 
+
         # just indicies not one-hot encoding
         Y_encoded = np.array(Y).flatten()
+
+        self.X, self.Y = X_encoded, Y_encoded
         return X_encoded, Y_encoded
         
 
@@ -100,6 +109,7 @@ if __name__ == "__main__":
     print("\nThis is our vocabulary: ")
     print(vocab)
 
+
     # PRINT TOKEN MAPPINGS
     print("\nChar->indx dictionary: ")
     count = 0
@@ -124,6 +134,9 @@ if __name__ == "__main__":
 
     inp_seq_length=4
     rnn = RNN(vocabulary=vocab, inp_seq_length=inp_seq_length)
+
+    print("\nVocab Size: ")
+    print(len(rnn.vocabulary))
     
     # SHOW ONE ENCODING OF TOKEN
     oh_encoding_vector = rnn.one_hot_encode("a", token_to_indx, vocab_size)
@@ -139,9 +152,14 @@ if __name__ == "__main__":
     print("\nVECTORIZE TRAINING EXAMPLES")
     X_encoded, Y_encoded = rnn.vectorize_training_data(X, Y)
     print("X-Training-Example (single example here, the columns are each one-hot character of this single input seqeunce): ")
-    print(X_encoded[0])         
-    print("Y-Training-Example (all examples here): ")
+    print(X_encoded[0])       
+    # where each row represents a character in the vocabulary
+    # whwere each col represents a timestep in the input-sequence, we set the inp-seq-len to 4.
+    print(f"shape: {X_encoded[0].shape} single example shape columns = timesteps, rows = vocab_size.")  
+     
+    print("\nY-Training-Example (all examples here): ")
     print(Y_encoded)
+    print(f"shape: {Y_encoded.shape} entire Y shape")  
 
 
 """
