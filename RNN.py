@@ -3,11 +3,21 @@ import numpy as np
 
 class RNN:
 
-    def __init__(self, vocabulary, inp_seq_length):
+    def __init__(self, num_layers, hidden_size, vocabulary, inp_seq_length):
+        self.num_layers = num_layers
+        self.hidden_size = hidden_size          # number of notes for layers, making all layers same size for this implementation
+        # each element is an example-input which each represents a input-sequence, each input-sequence is a list of tokens which are one-hot-encoded representing each token-char in that inp-seqeunce
+        # but this is stacked so each column represents a one-hot-encoded vector which is the token in that time-step
         self.X = []
+        # 1D-array of integers where each number is the index of a token in vocab representing the output-target-character of an input-sequence-example in X
         self.Y = []
         self.vocabulary = vocabulary                 # set of all unique tokens
-        self.inp_seq_length = inp_seq_length
+        self.inp_seq_length = inp_seq_length         # length of the input sequence which is the input of the example, the output is the next character which is the target character the output of this exampel
+
+        # stores hidden states for every layer and for every layer every timestep
+        # each element is a key-value-pair where the key is the layer-indx, the value is a dictionary where the keys are the timesteps-int and the value is the hidden-state at layer-l & timestep-t
+        # self.h[layer][timestep] is array representing the hidden state vector at that timestep in that layer, hidden state is the vector that stores output of all hidden units at timestep-t
+        self.h = {}
 
     # given a token an char or word it returns a one-hot-encoding of that token based on the token to its vocab index and the size of the vocab, NOT USED
     def one_hot_encode(self, token, token_to_indx, vocab_size):
@@ -33,6 +43,12 @@ class RNN:
                     Y.append([ token_to_indx[output_token] ])              # convert the output-character into its index in vocab and put in the same list
 
         return X, Y     # ith element in X is the input of an example, and the ith elemnet of Y is the ouput-label of that example
+    
+    def initialize_hidden_states_and_parameters(self):
+        # to init hidden state iterate all layers, add a dict for each layer which will contain all timesteps hidden states for that layer
+        for l in range(self.num_layers):
+            self.h[l] = {}
+            self.h[l][0] = np.zeros((self.hidden_size, 1))  # shape of hidden-state at timestep-t for layer-l is (hidden_units, batch_size), for now just init the 0th-ts (do all timesteps in forward pass dynamically)
     
     # given the index of a token of where it lives in vocab convert that into its one-hot-encoding-vector
     def one_hot_encode_token_index(self, token_indx, vocab_size):
@@ -133,7 +149,7 @@ if __name__ == "__main__":
 
 
     inp_seq_length=4
-    rnn = RNN(vocabulary=vocab, inp_seq_length=inp_seq_length)
+    rnn = RNN(num_layers=2, hidden_size=3, vocabulary=vocab, inp_seq_length=inp_seq_length)
 
     print("\nVocab Size: ")
     print(len(rnn.vocabulary))
@@ -160,6 +176,30 @@ if __name__ == "__main__":
     print("\nY-Training-Example (all examples here): ")
     print(Y_encoded)
     print(f"shape: {Y_encoded.shape} entire Y shape")  
+
+
+    # INITLIAZE HIDDEN STATES
+    print("INITIALIZE HIDDEN STATES")
+    rnn.initialize_hidden_states_and_parameters()
+    print(f"{rnn.h=}")
+    """
+    self.h = {
+        0: {     # Layer 0
+            0: h_0_0,   # hidden state at t=0
+            1: h_0_1,   # hidden state at t=1
+            ...
+            T: h_0_T    # hidden state at t=T
+        },
+        1: {     # Layer 1
+            0: h_1_0,
+            1: h_1_1,
+            ...
+            T: h_1_T
+        },
+        ...
+    }
+    """
+
 
 
 """
